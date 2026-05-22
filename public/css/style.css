@@ -61,6 +61,46 @@ a { color: var(--accent-dark); }
 
 .amp { color: var(--accent); font-style: italic; }
 
+/* ---------- Floating back button (colt sus stanga) ---------- */
+.back-floating {
+  position: fixed;
+  top: 14px;
+  left: 14px;
+  z-index: 50;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px 8px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-decoration: none;
+  box-shadow: var(--shadow-sm);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+  min-height: 40px;
+}
+.back-floating:hover, .back-floating:focus-visible {
+  box-shadow: var(--shadow-md);
+  transform: translateX(-2px);
+  background: white;
+  outline: none;
+}
+.back-floating svg { color: var(--accent-dark); flex-shrink: 0; }
+.back-label { white-space: nowrap; }
+
+/* Pe ecrane mici, ascundem textul ca sa nu se suprapuna cu lang-switcher */
+@media (max-width: 380px) {
+  .back-label { display: none; }
+  .back-floating { padding: 8px 10px; }
+}
+
 /* ---------- Floating language switcher (colt sus dreapta) ---------- */
 .lang-floating {
   position: fixed;

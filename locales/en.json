@@ -1,6 +1,8 @@
 {
   "nav.upload": "Add photo",
   "nav.gallery": "Gallery",
+  "nav.back": "Back",
+  "nav.home": "Home",
   "footer.signature": "With love, {{bride}} & {{groom}}",
 
   "index.kicker": "Welcome",

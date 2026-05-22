@@ -1,6 +1,8 @@
 {
   "nav.upload": "Добавить фото",
   "nav.gallery": "Галерея",
+  "nav.back": "Назад",
+  "nav.home": "Главная",
   "footer.signature": "С любовью, {{bride}} & {{groom}}",
 
   "index.kicker": "Добро пожаловать",

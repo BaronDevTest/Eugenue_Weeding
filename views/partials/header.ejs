@@ -1,3 +1,14 @@
+<!-- Floating back button (colt stanga-sus) - vizibil doar in afara paginii home -->
+<% if (currentPath && currentPath !== '/') { %>
+  <a href="/" class="back-floating" aria-label="<%= t('nav.back') %>">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <line x1="19" y1="12" x2="5" y2="12"/>
+      <polyline points="12 19 5 12 12 5"/>
+    </svg>
+    <span class="back-label"><%= t('nav.back') %></span>
+  </a>
+<% } %>
+
 <!-- Floating language switcher (colt dreapta-sus, mereu vizibil) -->
 <div class="lang-floating" id="langFloating">
   <button type="button" class="lang-trigger" id="langTrigger" aria-haspopup="true" aria-expanded="false" title="<%= t('lang.' + locale) %>">
