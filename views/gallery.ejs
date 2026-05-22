@@ -1,0 +1,48 @@
+<%- include('partials/head') %>
+<%- include('partials/header') %>
+
+<main class="page">
+  <h1 class="page-title">Galerie</h1>
+  <p class="page-subtitle">Toate momentele frumoase, adunate aici de invitatii nostri.</p>
+
+  <% if (typeof driveError !== 'undefined' && driveError) { %>
+    <div class="alert alert-error">
+      <strong>Galeria nu este disponibila momentan.</strong>
+      <p>Conexiunea cu albumul Google Drive nu este configurata. Daca esti gazda, intra in <a href="/admin">/admin</a> pentru configurare.</p>
+    </div>
+  <% } else if (items.length === 0) { %>
+    <div class="empty-state">
+      <p>Inca nu a fost adaugata nicio poza. Fii primul care contribuie!</p>
+      <a href="/upload" class="btn btn-primary">Adauga prima poza</a>
+    </div>
+  <% } else { %>
+    <div class="gallery-grid">
+      <% items.forEach(function (item) { %>
+        <figure class="gallery-item">
+          <% if (item.isImage) { %>
+            <a href="<%= item.fullUrl %>" target="_blank" rel="noopener">
+              <img src="<%= item.imageUrl %>" alt="<%= item.guestName || 'Poza nunta' %>" loading="lazy" />
+            </a>
+          <% } else if (item.isVideo) { %>
+            <a href="<%= item.webViewLink %>" target="_blank" rel="noopener" class="video-thumb">
+              <% if (item.imageUrl) { %>
+                <img src="<%= item.imageUrl %>" alt="Video" loading="lazy" />
+              <% } %>
+              <span class="play-icon" aria-hidden="true">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 4 20 12 6 20 6 4"/></svg>
+              </span>
+            </a>
+          <% } %>
+          <% if (item.guestName || item.message) { %>
+            <figcaption>
+              <% if (item.guestName) { %><strong><%= item.guestName %></strong><% } %>
+              <% if (item.message) { %><span class="caption-msg"><%= item.message %></span><% } %>
+            </figcaption>
+          <% } %>
+        </figure>
+      <% }); %>
+    </div>
+  <% } %>
+</main>
+
+<%- include('partials/footer') %>

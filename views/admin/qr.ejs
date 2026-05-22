@@ -1,0 +1,34 @@
+<%- include('../partials/head') %>
+<%- include('layout-header') %>
+
+<main class="admin-page">
+  <h1 class="page-title">QR Code</h1>
+  <p class="page-subtitle">Scaneaza pentru a deschide direct pagina de <%= target === '/gallery' ? 'galerie' : 'upload' %>.</p>
+
+  <div class="qr-tabs">
+    <a href="/admin/qr?target=upload" class="<%= target !== '/gallery' ? 'active' : '' %>">QR pentru upload</a>
+    <a href="/admin/qr?target=gallery" class="<%= target === '/gallery' ? 'active' : '' %>">QR pentru galerie</a>
+  </div>
+
+  <div class="qr-card">
+    <img src="<%= dataUrl %>" alt="QR Code" class="qr-image" />
+    <p class="qr-url"><%= url %></p>
+    <div class="qr-actions">
+      <a href="/admin/qr/download?target=<%= target === '/gallery' ? 'gallery' : 'upload' %>" class="btn btn-primary" download>
+        Descarca PNG (1200px)
+      </a>
+      <a href="<%= url %>" target="_blank" rel="noopener" class="btn btn-ghost">Deschide link</a>
+    </div>
+  </div>
+
+  <div class="info-card">
+    <h3>Cum folosesti QR-ul</h3>
+    <ul>
+      <li>Descarca PNG-ul si printeaza-l pe invitatii, pe mese sau pe un panou la intrarea in sala.</li>
+      <li>Invitatii scaneaza cu camera telefonului, ajung direct pe pagina si pot incarca pozele.</li>
+      <li>Asigura-te ca ai setat <strong>PUBLIC_URL</strong> in fisierul .env la URL-ul real al site-ului (ex: https://nunta.exemplu.ro).</li>
+    </ul>
+  </div>
+</main>
+
+<%- include('../partials/footer') %>

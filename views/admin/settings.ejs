@@ -1,0 +1,80 @@
+<%- include('../partials/head') %>
+<%- include('layout-header') %>
+
+<main class="admin-page">
+  <h1 class="page-title">Setari</h1>
+
+  <% if (message) { %><div class="alert alert-success"><%= message %></div><% } %>
+  <% if (error) { %><div class="alert alert-error"><%= error %></div><% } %>
+
+  <form method="POST" action="/admin/settings" class="settings-form">
+    <fieldset>
+      <legend>Detalii nunta</legend>
+      <div class="form-grid">
+        <div class="form-row">
+          <label for="brideName">Nume mireasa</label>
+          <input type="text" id="brideName" name="brideName" value="<%= settings.brideName %>" maxlength="60" />
+        </div>
+        <div class="form-row">
+          <label for="groomName">Nume mire</label>
+          <input type="text" id="groomName" name="groomName" value="<%= settings.groomName %>" maxlength="60" />
+        </div>
+        <div class="form-row">
+          <label for="weddingDate">Data nunta (text liber)</label>
+          <input type="text" id="weddingDate" name="weddingDate" value="<%= settings.weddingDate %>" placeholder="ex: 12 iunie 2026" maxlength="20" />
+        </div>
+      </div>
+      <div class="form-row">
+        <label for="welcomeMessage">Mesaj de welcome</label>
+        <textarea id="welcomeMessage" name="welcomeMessage" rows="3" maxlength="500"><%= settings.welcomeMessage %></textarea>
+      </div>
+      <div class="form-row checkbox-row">
+        <label>
+          <input type="checkbox" name="allowMessages" <%= settings.allowMessages ? 'checked' : '' %> />
+          Permite invitatilor sa lase un mesaj cu poza
+        </label>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Google Drive</legend>
+      <% if (serviceAccountEmail) { %>
+        <p class="muted">Service account: <code><%= serviceAccountEmail %></code></p>
+        <p class="muted">Partajeaza folderul Drive cu email-ul de mai sus (cu drepturi de Editor) inainte de a salva.</p>
+      <% } else { %>
+        <div class="alert alert-error">Nu am gasit fisierul service-account.json. Vezi README pentru configurare.</div>
+      <% } %>
+      <div class="form-row">
+        <label for="driveFolderId">ID folder Google Drive</label>
+        <input type="text" id="driveFolderId" name="driveFolderId" value="<%= settings.driveFolderId %>" placeholder="ex: 1aBcD3FgHiJkLmNoPqRsTuVwXyZ" />
+        <small>Gasesti ID-ul in URL-ul folderului: drive.google.com/drive/folders/<strong>ACEST_ID</strong></small>
+      </div>
+      <div class="form-row">
+        <label for="maxUploadMb">Limita marime fisier (MB)</label>
+        <input type="number" id="maxUploadMb" name="maxUploadMb" value="<%= settings.maxUploadMb %>" min="1" max="100" />
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Schimba parola admin</legend>
+      <p class="muted">Lasa gol daca nu vrei sa schimbi parola.</p>
+      <div class="form-grid">
+        <div class="form-row">
+          <label for="newPassword">Parola noua</label>
+          <input type="password" id="newPassword" name="newPassword" autocomplete="new-password" />
+        </div>
+        <div class="form-row">
+          <label for="confirmPassword">Confirma parola</label>
+          <input type="password" id="confirmPassword" name="confirmPassword" autocomplete="new-password" />
+        </div>
+      </div>
+    </fieldset>
+
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">Salveaza</button>
+      <a href="/admin" class="btn btn-ghost">Anuleaza</a>
+    </div>
+  </form>
+</main>
+
+<%- include('../partials/footer') %>

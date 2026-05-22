@@ -1,0 +1,15 @@
+<header class="admin-header">
+  <a href="/admin" class="admin-brand">
+    <strong><%= settings.brideName %> &amp; <%= settings.groomName %></strong>
+    <span>Admin</span>
+  </a>
+  <nav class="admin-nav">
+    <a href="/admin">Dashboard</a>
+    <a href="/admin/qr">QR Code</a>
+    <a href="/admin/photos">Poze</a>
+    <a href="/admin/settings">Setari</a>
+    <form method="POST" action="/admin/logout" class="logout-form">
+      <button type="submit" class="btn-link">Iesire</button>
+    </form>
+  </nav>
+</header>

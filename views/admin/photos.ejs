@@ -1,0 +1,40 @@
+<%- include('../partials/head') %>
+<%- include('layout-header') %>
+
+<main class="admin-page">
+  <h1 class="page-title">Moderare poze</h1>
+  <p class="page-subtitle"><%= items.length %> fisiere in album. Apasa pe butonul rosu pentru a sterge un fisier.</p>
+
+  <% if (items.length === 0) { %>
+    <div class="empty-state"><p>Inca nu a fost incarcata nicio poza.</p></div>
+  <% } else { %>
+    <div class="moderate-grid">
+      <% items.forEach(function (item) { %>
+        <div class="moderate-item">
+          <div class="moderate-thumb">
+            <% if (item.isImage) { %>
+              <img src="<%= item.imageUrl %>" alt="" loading="lazy" />
+            <% } else if (item.isVideo) { %>
+              <div class="video-placeholder">
+                <% if (item.imageUrl) { %><img src="<%= item.imageUrl %>" alt="" loading="lazy" /><% } %>
+                <span class="badge">VIDEO</span>
+              </div>
+            <% } else { %>
+              <div class="video-placeholder"><span class="badge">FILE</span></div>
+            <% } %>
+          </div>
+          <div class="moderate-meta">
+            <% if (item.guestName) { %><strong><%= item.guestName %></strong><% } %>
+            <% if (item.message) { %><p class="caption-msg"><%= item.message %></p><% } %>
+            <small><%= new Date(item.createdTime).toLocaleString('ro-RO') %></small>
+          </div>
+          <form method="POST" action="/admin/photos/<%= item.id %>/delete" onsubmit="return confirm('Sterg fisierul?');">
+            <button type="submit" class="btn btn-danger btn-block">Sterge</button>
+          </form>
+        </div>
+      <% }); %>
+    </div>
+  <% } %>
+</main>
+
+<%- include('../partials/footer') %>

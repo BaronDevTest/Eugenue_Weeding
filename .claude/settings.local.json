@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install *)",
+      "Bash(npm audit *)",
+      "Bash(PORT=3456 node app.js)",
+      "Bash(echo \"PID: $!\")",
+      "Bash(curl -sS -o /dev/null -w \"GET / -> %{http_code}\\\\n\" http://localhost:3456/)",
+      "Bash(curl -sS -o /dev/null -w \"GET /upload -> %{http_code}\\\\n\" http://localhost:3456/upload)",
+      "Bash(curl -sS -o /dev/null -w \"GET /admin/login -> %{http_code}\\\\n\" http://localhost:3456/admin/login)",
+      "Bash(rm -f config/settings.json)",
+      "Bash(PORT=3457 node app.js)",
+      "Bash(curl -sS -o /dev/null -w \"GET / -> %{http_code}\\\\n\" http://localhost:3457/)",
+      "Bash(curl -sS -o /dev/null -w \"GET /upload -> %{http_code}\\\\n\" http://localhost:3457/upload)",
+      "Bash(curl -sS -o /dev/null -w \"GET /gallery -> %{http_code}\\\\n\" http://localhost:3457/gallery)",
+      "Bash(kill %1)",
+      "Bash(wait)"
+    ]
+  }
+}

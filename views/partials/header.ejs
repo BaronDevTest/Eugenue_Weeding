@@ -1,0 +1,15 @@
+<header class="site-header">
+  <a href="/" class="brand">
+    <span class="brand-names"><%= settings.brideName %> <span class="amp">&amp;</span> <%= settings.groomName %></span>
+    <% if (settings.weddingDate) { %>
+      <span class="brand-date"><%= settings.weddingDate %></span>
+    <% } %>
+  </a>
+  <nav class="site-nav">
+    <a href="/upload">Adauga poza</a>
+    <a href="/gallery">Galerie</a>
+    <% if (isAdmin) { %>
+      <a href="/admin" class="admin-link">Admin</a>
+    <% } %>
+  </nav>
+</header>

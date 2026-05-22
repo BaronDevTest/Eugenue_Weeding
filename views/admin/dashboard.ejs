@@ -1,0 +1,57 @@
+<%- include('../partials/head') %>
+<%- include('layout-header') %>
+
+<main class="admin-page">
+  <h1 class="page-title">Dashboard</h1>
+
+  <% if (!drivetest.ok) { %>
+    <div class="alert alert-error">
+      <strong>Drive nu este conectat.</strong>
+      <p><%= drivetest.error %></p>
+      <% if (drivetest.serviceAccountEmail) { %>
+        <p>Asigura-te ca ai partajat folderul Drive cu: <code><%= drivetest.serviceAccountEmail %></code></p>
+      <% } %>
+      <a href="/admin/settings" class="btn btn-primary">Configureaza Drive</a>
+    </div>
+  <% } else { %>
+    <div class="alert alert-success">
+      Drive conectat la folderul <strong><%= drivetest.folder.name %></strong>.
+    </div>
+  <% } %>
+
+  <div class="stat-grid">
+    <div class="stat-card">
+      <span class="stat-label">Total fisiere</span>
+      <span class="stat-value"><%= stats.total %></span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-label">Imagini</span>
+      <span class="stat-value"><%= stats.images %></span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-label">Video-uri</span>
+      <span class="stat-value"><%= stats.videos %></span>
+    </div>
+  </div>
+
+  <div class="action-grid">
+    <a href="/admin/qr" class="action-card">
+      <h3>Genereaza QR Code</h3>
+      <p>Descarca QR-ul pentru a-l printa pe invitatii sau a-l pune pe mese.</p>
+    </a>
+    <a href="/admin/photos" class="action-card">
+      <h3>Modereaza pozele</h3>
+      <p>Vezi toate pozele incarcate si sterge-le pe cele nedorite.</p>
+    </a>
+    <a href="/admin/settings" class="action-card">
+      <h3>Setari</h3>
+      <p>Modifica numele mirilor, mesajul de welcome, folderul Drive si parola.</p>
+    </a>
+    <a href="/gallery" class="action-card">
+      <h3>Vezi galeria publica</h3>
+      <p>Asa vad invitatii pozele.</p>
+    </a>
+  </div>
+</main>
+
+<%- include('../partials/footer') %>

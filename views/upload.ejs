@@ -1,0 +1,114 @@
+<%- include('partials/head') %>
+<%- include('partials/header') %>
+
+<main class="page">
+  <h1 class="page-title">Adauga poze</h1>
+  <p class="page-subtitle">Selecteaza pozele din galeria telefonului sau scoate-le direct. Vor fi salvate automat in albumul nuntii.</p>
+
+  <% if (typeof error !== 'undefined' && error) { %>
+    <div class="alert alert-error"><%= error %></div>
+  <% } %>
+
+  <form action="/upload" method="POST" enctype="multipart/form-data" class="upload-form" id="uploadForm">
+    <label class="dropzone" id="dropzone">
+      <input type="file" name="photos" id="fileInput" accept="image/*,video/*" multiple capture="environment" />
+      <div class="dropzone-content" id="dropzoneContent">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="17 8 12 3 7 8"/>
+          <line x1="12" y1="3" x2="12" y2="15"/>
+        </svg>
+        <p class="dropzone-title">Apasa pentru a alege poze</p>
+        <p class="dropzone-hint">sau trage-le aici · max <%= settings.maxUploadMb %>MB per fisier</p>
+      </div>
+      <div class="dropzone-preview" id="preview" hidden></div>
+    </label>
+
+    <div class="form-row">
+      <label for="guestName">Numele tau <span class="optional">(optional)</span></label>
+      <input type="text" id="guestName" name="guestName" maxlength="60" placeholder="Ex: Maria si Andrei" />
+    </div>
+
+    <% if (settings.allowMessages) { %>
+      <div class="form-row">
+        <label for="message">Mesaj pentru miri <span class="optional">(optional)</span></label>
+        <textarea id="message" name="message" rows="3" maxlength="280" placeholder="Casa de piatra!"></textarea>
+      </div>
+    <% } %>
+
+    <button type="submit" class="btn btn-primary btn-block" id="submitBtn">
+      <span class="btn-label">Trimite pozele</span>
+      <span class="btn-spinner" hidden></span>
+    </button>
+  </form>
+</main>
+
+<script>
+  (function () {
+    var input = document.getElementById('fileInput');
+    var preview = document.getElementById('preview');
+    var content = document.getElementById('dropzoneContent');
+    var form = document.getElementById('uploadForm');
+    var submitBtn = document.getElementById('submitBtn');
+    var dropzone = document.getElementById('dropzone');
+
+    function renderPreviews(files) {
+      preview.innerHTML = '';
+      if (!files || files.length === 0) {
+        preview.hidden = true;
+        content.hidden = false;
+        return;
+      }
+      content.hidden = true;
+      preview.hidden = false;
+      Array.prototype.forEach.call(files, function (file) {
+        var item = document.createElement('div');
+        item.className = 'preview-item';
+        if (file.type.indexOf('image/') === 0) {
+          var img = document.createElement('img');
+          img.src = URL.createObjectURL(file);
+          img.onload = function () { URL.revokeObjectURL(img.src); };
+          item.appendChild(img);
+        } else {
+          var v = document.createElement('div');
+          v.className = 'preview-video';
+          v.textContent = 'Video';
+          item.appendChild(v);
+        }
+        var name = document.createElement('span');
+        name.className = 'preview-name';
+        name.textContent = file.name;
+        item.appendChild(name);
+        preview.appendChild(item);
+      });
+      var count = document.createElement('p');
+      count.className = 'preview-count';
+      count.textContent = files.length + (files.length === 1 ? ' fisier selectat' : ' fisiere selectate');
+      preview.appendChild(count);
+    }
+
+    input.addEventListener('change', function () { renderPreviews(input.files); });
+
+    // Drag & drop
+    ['dragenter', 'dragover'].forEach(function (ev) {
+      dropzone.addEventListener(ev, function (e) { e.preventDefault(); dropzone.classList.add('is-drag'); });
+    });
+    ['dragleave', 'drop'].forEach(function (ev) {
+      dropzone.addEventListener(ev, function (e) { e.preventDefault(); dropzone.classList.remove('is-drag'); });
+    });
+    dropzone.addEventListener('drop', function (e) {
+      if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length) {
+        input.files = e.dataTransfer.files;
+        renderPreviews(input.files);
+      }
+    });
+
+    form.addEventListener('submit', function () {
+      submitBtn.disabled = true;
+      submitBtn.querySelector('.btn-label').textContent = 'Se incarca...';
+      submitBtn.querySelector('.btn-spinner').hidden = false;
+    });
+  })();
+</script>
+
+<%- include('partials/footer') %>
