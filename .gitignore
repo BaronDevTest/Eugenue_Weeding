@@ -4,7 +4,10 @@ service-account.json
 config/settings.json
 uploads/
 *.log
+*.zip
 .DS_Store
 Thumbs.db
 .vscode/
 .idea/
+server.log
+server.err.log
