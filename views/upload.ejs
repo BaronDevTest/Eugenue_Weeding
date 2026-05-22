@@ -2,43 +2,50 @@
 <%- include('partials/header') %>
 
 <main class="page">
-  <h1 class="page-title">Adauga poze</h1>
-  <p class="page-subtitle">Selecteaza pozele din galeria telefonului sau scoate-le direct. Vor fi salvate automat in albumul nuntii.</p>
+  <h1 class="page-title"><%= t('upload.title') %></h1>
+  <p class="page-subtitle"><%= t('upload.subtitle') %></p>
 
   <% if (typeof error !== 'undefined' && error) { %>
-    <div class="alert alert-error"><%= error %></div>
+    <div class="alert alert-error" id="serverError"><%= error %></div>
   <% } %>
 
   <form action="/upload" method="POST" enctype="multipart/form-data" class="upload-form" id="uploadForm">
     <label class="dropzone" id="dropzone">
       <input type="file" name="photos" id="fileInput" accept="image/*,video/*" multiple capture="environment" />
       <div class="dropzone-content" id="dropzoneContent">
-        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
           <polyline points="17 8 12 3 7 8"/>
           <line x1="12" y1="3" x2="12" y2="15"/>
         </svg>
-        <p class="dropzone-title">Apasa pentru a alege poze</p>
-        <p class="dropzone-hint">sau trage-le aici · max <%= settings.maxUploadMb %>MB per fisier</p>
+        <p class="dropzone-title"><%= t('upload.dropTitle') %></p>
+        <p class="dropzone-hint"><%= t('upload.dropHint', { max: settings.maxUploadMb }) %></p>
       </div>
-      <div class="dropzone-preview" id="preview" hidden></div>
     </label>
 
+    <div class="preview-section" id="previewSection" hidden>
+      <div class="dropzone-preview" id="preview"></div>
+      <div class="preview-actions">
+        <button type="button" class="btn btn-ghost btn-sm" id="addMoreBtn">+ <%= t('upload.addMore') %></button>
+        <button type="button" class="btn-link" id="clearAllBtn"><%= t('upload.clearAll') %></button>
+      </div>
+    </div>
+
     <div class="form-row">
-      <label for="guestName">Numele tau <span class="optional">(optional)</span></label>
-      <input type="text" id="guestName" name="guestName" maxlength="60" placeholder="Ex: Maria si Andrei" />
+      <label for="guestName"><%= t('upload.guestNameLabel') %> <span class="optional"><%= t('upload.optional') %></span></label>
+      <input type="text" id="guestName" name="guestName" maxlength="60" placeholder="<%= t('upload.guestNamePlaceholder') %>" />
     </div>
 
     <% if (settings.allowMessages) { %>
       <div class="form-row">
-        <label for="message">Mesaj pentru miri <span class="optional">(optional)</span></label>
-        <textarea id="message" name="message" rows="3" maxlength="280" placeholder="Casa de piatra!"></textarea>
+        <label for="message"><%= t('upload.messageLabel') %> <span class="optional"><%= t('upload.optional') %></span></label>
+        <textarea id="message" name="message" rows="3" maxlength="280" placeholder="<%= t('upload.messagePlaceholder') %>"></textarea>
       </div>
     <% } %>
 
     <button type="submit" class="btn btn-primary btn-block" id="submitBtn">
-      <span class="btn-label">Trimite pozele</span>
-      <span class="btn-spinner" hidden></span>
+      <span class="btn-spinner" aria-hidden="true" hidden></span>
+      <span class="btn-label"><%= t('upload.submit') %></span>
     </button>
   </form>
 </main>
@@ -47,23 +54,84 @@
   (function () {
     var input = document.getElementById('fileInput');
     var preview = document.getElementById('preview');
+    var previewSection = document.getElementById('previewSection');
     var content = document.getElementById('dropzoneContent');
     var form = document.getElementById('uploadForm');
     var submitBtn = document.getElementById('submitBtn');
+    var btnLabel = submitBtn.querySelector('.btn-label');
+    var btnSpinner = submitBtn.querySelector('.btn-spinner');
+    var btnLabelOriginal = btnLabel.textContent;
     var dropzone = document.getElementById('dropzone');
+    var addMoreBtn = document.getElementById('addMoreBtn');
+    var clearAllBtn = document.getElementById('clearAllBtn');
 
-    function renderPreviews(files) {
+    // Acumulator de fisiere - dupa fiecare interactiune cu input-ul,
+    // noile fisiere se ADAUGA, nu inlocuiesc selectia anterioara.
+    var accumulated = [];
+
+    function setInputFiles(files) {
+      try {
+        var dt = new DataTransfer();
+        files.forEach(function (f) { dt.items.add(f); });
+        input.files = dt.files;
+      } catch (e) {
+        // Fallback - majoritatea browserelor moderne suporta DataTransfer
+      }
+    }
+
+    function fileKey(f) { return f.name + '_' + f.size + '_' + (f.lastModified || 0); }
+
+    function addFiles(newFiles) {
+      var existingKeys = {};
+      accumulated.forEach(function (f) { existingKeys[fileKey(f)] = true; });
+      Array.prototype.forEach.call(newFiles, function (f) {
+        if (!existingKeys[fileKey(f)]) {
+          accumulated.push(f);
+          existingKeys[fileKey(f)] = true;
+        }
+      });
+      setInputFiles(accumulated);
+      renderPreviews();
+    }
+
+    function removeFile(index) {
+      accumulated.splice(index, 1);
+      setInputFiles(accumulated);
+      renderPreviews();
+    }
+
+    function clearAll() {
+      accumulated = [];
+      setInputFiles(accumulated);
+      input.value = '';
+      renderPreviews();
+    }
+
+    var i18n = {
+      uploading: <%- JSON.stringify(t('upload.uploading')) %>,
+      errorGeneric: <%- JSON.stringify(t('upload.errorGeneric')) %>,
+      filesSelected: <%- JSON.stringify(t('upload.filesSelected')) %>,
+      filesSelectedPlural: <%- JSON.stringify(t('upload.filesSelectedPlural')) %>,
+      tooLarge: <%- JSON.stringify(t('upload.errorTooLarge')) %>,
+      noFiles: <%- JSON.stringify(t('upload.errorNoFiles')) %>,
+      removeFile: <%- JSON.stringify(t('upload.removeFile')) %>,
+      maxMb: <%= settings.maxUploadMb %>
+    };
+
+    function renderPreviews() {
       preview.innerHTML = '';
-      if (!files || files.length === 0) {
-        preview.hidden = true;
+      if (accumulated.length === 0) {
+        previewSection.hidden = true;
         content.hidden = false;
         return;
       }
       content.hidden = true;
-      preview.hidden = false;
-      Array.prototype.forEach.call(files, function (file) {
+      previewSection.hidden = false;
+
+      accumulated.forEach(function (file, index) {
         var item = document.createElement('div');
         item.className = 'preview-item';
+
         if (file.type.indexOf('image/') === 0) {
           var img = document.createElement('img');
           img.src = URL.createObjectURL(file);
@@ -75,21 +143,44 @@
           v.textContent = 'Video';
           item.appendChild(v);
         }
-        var name = document.createElement('span');
-        name.className = 'preview-name';
-        name.textContent = file.name;
-        item.appendChild(name);
+
+        // Buton X pentru a elimina fisierul
+        var rmBtn = document.createElement('button');
+        rmBtn.type = 'button';
+        rmBtn.className = 'preview-remove';
+        rmBtn.setAttribute('aria-label', i18n.removeFile);
+        rmBtn.innerHTML = '&times;';
+        rmBtn.addEventListener('click', function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          removeFile(index);
+        });
+        item.appendChild(rmBtn);
+
         preview.appendChild(item);
       });
+
       var count = document.createElement('p');
       count.className = 'preview-count';
-      count.textContent = files.length + (files.length === 1 ? ' fisier selectat' : ' fisiere selectate');
+      var key = accumulated.length === 1 ? i18n.filesSelected : i18n.filesSelectedPlural;
+      count.textContent = key.replace('{{count}}', accumulated.length);
       preview.appendChild(count);
     }
 
-    input.addEventListener('change', function () { renderPreviews(input.files); });
+    input.addEventListener('change', function () {
+      addFiles(input.files);
+    });
 
-    // Drag & drop
+    addMoreBtn.addEventListener('click', function (e) {
+      e.preventDefault();
+      input.value = '';
+      input.click();
+    });
+    clearAllBtn.addEventListener('click', function (e) {
+      e.preventDefault();
+      clearAll();
+    });
+
     ['dragenter', 'dragover'].forEach(function (ev) {
       dropzone.addEventListener(ev, function (e) { e.preventDefault(); dropzone.classList.add('is-drag'); });
     });
@@ -98,15 +189,89 @@
     });
     dropzone.addEventListener('drop', function (e) {
       if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length) {
-        input.files = e.dataTransfer.files;
-        renderPreviews(input.files);
+        addFiles(e.dataTransfer.files);
       }
     });
 
-    form.addEventListener('submit', function () {
-      submitBtn.disabled = true;
-      submitBtn.querySelector('.btn-label').textContent = 'Se incarca...';
-      submitBtn.querySelector('.btn-spinner').hidden = false;
+    function setButtonLoading(loading) {
+      submitBtn.disabled = loading;
+      btnSpinner.hidden = !loading;
+      if (loading) {
+        btnLabel.textContent = i18n.uploading;
+      } else {
+        btnLabel.textContent = btnLabelOriginal;
+      }
+    }
+    function setPercent(p) {
+      // procentajul nu mai e afisat - butonul ramane in stare "loading"
+      // pana la redirect. Functia o pastram doar ca placeholder pentru
+      // viitoare ajustari (ex: bara fina de progres).
+    }
+
+    function showError(msg) {
+      var existing = document.getElementById('serverError');
+      if (existing) existing.remove();
+      var el = document.createElement('div');
+      el.id = 'serverError';
+      el.className = 'alert alert-error';
+      el.textContent = msg;
+      form.parentNode.insertBefore(el, form);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+
+      if (accumulated.length === 0) {
+        showError(i18n.noFiles);
+        return;
+      }
+      var maxBytes = i18n.maxMb * 1024 * 1024;
+      for (var i = 0; i < accumulated.length; i++) {
+        var f = accumulated[i];
+        if (f.size > maxBytes) {
+          showError(i18n.tooLarge.replace('{{name}}', f.name).replace('{{max}}', i18n.maxMb));
+          return;
+        }
+      }
+
+      // Construim FormData manual ca sa fim siguri ca toate fisierele acumulate sunt trimise
+      var fd = new FormData();
+      accumulated.forEach(function (f) { fd.append('photos', f, f.name); });
+      var guest = document.getElementById('guestName');
+      if (guest && guest.value) fd.append('guestName', guest.value);
+      var msg = document.getElementById('message');
+      if (msg && msg.value) fd.append('message', msg.value);
+      var xhr = new XMLHttpRequest();
+      xhr.open('POST', '/upload', true);
+      xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+      xhr.setRequestHeader('Accept', 'application/json');
+
+      xhr.upload.onprogress = function (evt) {
+        if (evt.lengthComputable) {
+          setPercent((evt.loaded / evt.total) * 100);
+        }
+      };
+      xhr.onload = function () {
+        var data = null;
+        try { data = JSON.parse(xhr.responseText); } catch (e) {}
+
+        if (xhr.status >= 200 && xhr.status < 300 && data && data.ok) {
+          setPercent(100);
+          window.location.href = data.redirectTo || '/gallery';
+        } else {
+          setButtonLoading(false);
+          var msg = (data && data.error) ? data.error : (i18n.errorGeneric + ' (HTTP ' + xhr.status + ')');
+          showError(msg);
+        }
+      };
+      xhr.onerror = function () {
+        setButtonLoading(false);
+        showError(i18n.errorGeneric);
+      };
+
+      setButtonLoading(true);
+      xhr.send(fd);
     });
   })();
 </script>

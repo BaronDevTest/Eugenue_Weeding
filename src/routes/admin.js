@@ -68,38 +68,123 @@ router.get('/', async (req, res, next) => {
   }
 });
 
-// QR generator
+// QR generator - codeaza URL-ul stabil pentru pagina principala
+// IMPORTANT: codul codeaza PUBLIC_URL/ (radacina). Acest URL trebuie sa fie
+// definitiv inainte de a printa QR-ul pe invitatii.
+function getPublicHomeUrl(req) {
+  const publicUrl = process.env.PUBLIC_URL || `${req.protocol}://${req.get('host')}`;
+  return publicUrl.replace(/\/$/, '') + '/';
+}
+
 router.get('/qr', async (req, res, next) => {
   try {
-    const publicUrl = process.env.PUBLIC_URL || `${req.protocol}://${req.get('host')}`;
-    const target = (req.query.target === 'gallery' ? '/gallery' : '/upload');
-    const url = publicUrl.replace(/\/$/, '') + target;
+    const url = getPublicHomeUrl(req);
     const dataUrl = await QRCode.toDataURL(url, {
       errorCorrectionLevel: 'H',
-      margin: 2,
-      width: 600,
+      margin: 3,
+      width: 800,
       color: { dark: '#1a1a1a', light: '#ffffff' },
     });
-    res.render('admin/qr', { title: 'QR Code', dataUrl, url, target });
+    const isProduction = (process.env.PUBLIC_URL || '').match(/^https:\/\//i)
+      && !url.includes('localhost')
+      && !url.match(/127\.0\.0\.1|192\.168\.|10\./);
+    res.render('admin/qr', { title: 'QR Code', dataUrl, url, isProduction });
   } catch (err) {
     next(err);
   }
 });
 
-// QR download as PNG
+// QR download as high-res PNG (1500px) - perfect pentru tipar
 router.get('/qr/download', async (req, res, next) => {
   try {
-    const publicUrl = process.env.PUBLIC_URL || `${req.protocol}://${req.get('host')}`;
-    const target = (req.query.target === 'gallery' ? '/gallery' : '/upload');
-    const url = publicUrl.replace(/\/$/, '') + target;
+    const url = getPublicHomeUrl(req);
     const buffer = await QRCode.toBuffer(url, {
       errorCorrectionLevel: 'H',
-      margin: 2,
-      width: 1200,
+      margin: 3,
+      width: 1500,
     });
     res.setHeader('Content-Type', 'image/png');
-    res.setHeader('Content-Disposition', `attachment; filename="qr-${target.replace('/', '')}.png"`);
+    res.setHeader('Content-Disposition', 'attachment; filename="QR-nunta-Emilia-Eugen.png"');
     res.send(buffer);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// QR download as SVG (vectorial - calitate infinita la tipar)
+router.get('/qr/download.svg', async (req, res, next) => {
+  try {
+    const url = getPublicHomeUrl(req);
+    const svg = await QRCode.toString(url, {
+      type: 'svg',
+      errorCorrectionLevel: 'H',
+      margin: 3,
+    });
+    res.setHeader('Content-Type', 'image/svg+xml');
+    res.setHeader('Content-Disposition', 'attachment; filename="QR-nunta-Emilia-Eugen.svg"');
+    res.send(svg);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ---- OAuth Drive ----
+router.get('/drive/connect', async (req, res, next) => {
+  try {
+    const url = drive.generateAuthUrl(req);
+    res.redirect(url);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/drive/callback', async (req, res, next) => {
+  try {
+    const { code, error } = req.query;
+    if (error) {
+      return res.status(400).render('admin/drive-result', {
+        title: 'Conectare Drive',
+        ok: false,
+        message: `Google a returnat eroarea: ${error}`,
+      });
+    }
+    if (!code) {
+      return res.status(400).render('admin/drive-result', {
+        title: 'Conectare Drive',
+        ok: false,
+        message: 'Codul de autorizare lipseste.',
+      });
+    }
+    await drive.handleOAuthCallback(code, req);
+    // Salveaza email-ul user-ului conectat pentru afisare
+    try {
+      const test = await drive.testConnection();
+      if (test.ok && test.user && test.user.emailAddress) {
+        await updateSettings({ driveConnectedAs: test.user.emailAddress });
+      }
+    } catch {
+      // ignore
+    }
+    res.render('admin/drive-result', {
+      title: 'Conectare Drive',
+      ok: true,
+      message: 'Drive conectat cu succes.',
+    });
+  } catch (err) {
+    console.error('[oauth callback]', err);
+    res.status(500).render('admin/drive-result', {
+      title: 'Conectare Drive',
+      ok: false,
+      message: 'Eroare la finalizarea conectarii: ' + err.message,
+    });
+  }
+});
+
+router.post('/drive/disconnect', async (req, res, next) => {
+  try {
+    await drive.disconnect();
+    await updateSettings({ driveConnectedAs: '' });
+    res.redirect('/admin');
   } catch (err) {
     next(err);
   }
@@ -128,10 +213,42 @@ router.get('/photos', async (req, res, next) => {
 });
 
 router.post('/photos/:id/delete', async (req, res, next) => {
+  const isXhr = req.xhr || req.get('X-Requested-With') === 'XMLHttpRequest';
   try {
     await drive.deleteFile(req.params.id);
+    if (isXhr) return res.json({ ok: true, id: req.params.id });
     res.redirect('/admin/photos');
   } catch (err) {
+    if (isXhr) return res.status(500).json({ ok: false, error: err.message, id: req.params.id });
+    next(err);
+  }
+});
+
+// Bulk delete - primeste { ids: ['id1','id2',...] } via JSON sau form-data
+router.post('/photos/delete-bulk', async (req, res, next) => {
+  const isXhr = req.xhr || req.get('X-Requested-With') === 'XMLHttpRequest';
+  try {
+    let ids = req.body.ids;
+    if (typeof ids === 'string') ids = ids.split(',').filter(Boolean);
+    if (!Array.isArray(ids) || ids.length === 0) {
+      if (isXhr) return res.status(400).json({ ok: false, error: 'Nu ai selectat nicio poza.' });
+      return res.redirect('/admin/photos');
+    }
+    const results = [];
+    for (const id of ids) {
+      try {
+        await drive.deleteFile(id);
+        results.push({ id, ok: true });
+      } catch (err) {
+        console.error('[bulk-delete] Eroare la', id, err.message);
+        results.push({ id, ok: false, error: err.message });
+      }
+    }
+    const succeeded = results.filter((r) => r.ok).length;
+    if (isXhr) return res.json({ ok: true, deleted: succeeded, total: ids.length, results });
+    res.redirect('/admin/photos');
+  } catch (err) {
+    if (isXhr) return res.status(500).json({ ok: false, error: err.message });
     next(err);
   }
 });
@@ -145,7 +262,7 @@ router.get('/settings', async (req, res, next) => {
       settings,
       message: req.query.saved ? 'Setarile au fost salvate.' : null,
       error: null,
-      serviceAccountEmail: drive.getServiceAccountEmail(),
+      driveConnected: await drive.isConnected(),
     });
   } catch (err) {
     next(err);
@@ -158,7 +275,9 @@ router.post('/settings', async (req, res, next) => {
       brideName,
       groomName,
       weddingDate,
-      welcomeMessage,
+      welcomeMessageRo,
+      welcomeMessageEn,
+      welcomeMessageRu,
       driveFolderId,
       maxUploadMb,
       allowMessages,
@@ -170,7 +289,10 @@ router.post('/settings', async (req, res, next) => {
       brideName: (brideName || '').trim().slice(0, 60),
       groomName: (groomName || '').trim().slice(0, 60),
       weddingDate: (weddingDate || '').trim().slice(0, 20),
-      welcomeMessage: (welcomeMessage || '').trim().slice(0, 500),
+      welcomeMessageRo: (welcomeMessageRo || '').trim().slice(0, 500),
+      welcomeMessageEn: (welcomeMessageEn || '').trim().slice(0, 500),
+      welcomeMessageRu: (welcomeMessageRu || '').trim().slice(0, 500),
+      welcomeMessage: (welcomeMessageRo || '').trim().slice(0, 500), // legacy compat
       driveFolderId: (driveFolderId || '').trim(),
       maxUploadMb: Math.max(1, Math.min(100, parseInt(maxUploadMb, 10) || 25)),
       allowMessages: allowMessages === 'on' || allowMessages === 'true' || allowMessages === true,
@@ -184,7 +306,7 @@ router.post('/settings', async (req, res, next) => {
           settings: { ...settings, ...patch },
           message: null,
           error: 'Parola noua trebuie sa aiba minim 6 caractere.',
-          serviceAccountEmail: drive.getServiceAccountEmail(),
+          driveConnected: await drive.isConnected(),
         });
       }
       if (newPassword !== confirmPassword) {
@@ -194,7 +316,7 @@ router.post('/settings', async (req, res, next) => {
           settings: { ...settings, ...patch },
           message: null,
           error: 'Parolele nu coincid.',
-          serviceAccountEmail: drive.getServiceAccountEmail(),
+          driveConnected: await drive.isConnected(),
         });
       }
       await setAdminPassword(newPassword);

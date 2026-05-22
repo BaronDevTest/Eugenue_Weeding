@@ -1,13 +1,23 @@
 <!DOCTYPE html>
-<html lang="ro">
+<html lang="<%= locale %>">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
   <meta name="theme-color" content="#f4e9dc" />
   <title><%= title %> · <%= settings.brideName %> & <%= settings.groomName %></title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+
+  <%
+    // Determinam ce subset preincarcam in functie de limba curenta.
+    // Latin acopera ro/en cu diacritice mici. Cyrillic pentru rusa.
+    var preloadSubset = (locale === 'ru') ? 'cyrillic' : 'latin';
+  %>
+
+  <!-- Preload fonturi critice - pornesc descarcarea inainte ca CSS-ul sa fie parsat -->
+  <link rel="preload" href="/static/fonts/CormorantGaramond-500-<%= preloadSubset %>.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="/static/fonts/Inter-400-<%= preloadSubset %>.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="/static/fonts/Inter-500-<%= preloadSubset %>.woff2" as="font" type="font/woff2" crossorigin />
+
+  <link rel="stylesheet" href="/static/css/fonts.css" />
   <link rel="stylesheet" href="/static/css/style.css" />
 </head>
 <body>

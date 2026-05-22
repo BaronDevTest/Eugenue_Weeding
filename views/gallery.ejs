@@ -1,38 +1,54 @@
 <%- include('partials/head') %>
 <%- include('partials/header') %>
 
-<main class="page">
-  <h1 class="page-title">Galerie</h1>
-  <p class="page-subtitle">Toate momentele frumoase, adunate aici de invitatii nostri.</p>
+<main class="page gallery-page">
+  <h1 class="page-title"><%= t('gallery.title') %></h1>
+  <p class="page-subtitle"><%= t('gallery.subtitle') %></p>
+
+  <% if (typeof uploaded !== 'undefined' && uploaded > 0) { %>
+    <div class="alert alert-success toast" id="uploadedToast">
+      <%= uploaded === 1 ? t('gallery.uploadedOne') : t('gallery.uploadedMany', { count: uploaded }) %>
+    </div>
+  <% } %>
 
   <% if (typeof driveError !== 'undefined' && driveError) { %>
     <div class="alert alert-error">
-      <strong>Galeria nu este disponibila momentan.</strong>
-      <p>Conexiunea cu albumul Google Drive nu este configurata. Daca esti gazda, intra in <a href="/admin">/admin</a> pentru configurare.</p>
+      <strong><%= t('gallery.driveUnavailable') %></strong>
+      <p><%= t('gallery.driveUnavailableHint') %></p>
     </div>
   <% } else if (items.length === 0) { %>
     <div class="empty-state">
-      <p>Inca nu a fost adaugata nicio poza. Fii primul care contribuie!</p>
-      <a href="/upload" class="btn btn-primary">Adauga prima poza</a>
+      <p><%= t('gallery.empty') %></p>
+      <a href="/upload" class="btn btn-primary"><%= t('gallery.btnFirst') %></a>
     </div>
   <% } else { %>
-    <div class="gallery-grid">
-      <% items.forEach(function (item) { %>
-        <figure class="gallery-item">
-          <% if (item.isImage) { %>
-            <a href="<%= item.fullUrl %>" target="_blank" rel="noopener">
-              <img src="<%= item.imageUrl %>" alt="<%= item.guestName || 'Poza nunta' %>" loading="lazy" />
-            </a>
-          <% } else if (item.isVideo) { %>
-            <a href="<%= item.webViewLink %>" target="_blank" rel="noopener" class="video-thumb">
-              <% if (item.imageUrl) { %>
-                <img src="<%= item.imageUrl %>" alt="Video" loading="lazy" />
-              <% } %>
+    <div class="gallery-toolbar">
+      <a href="/upload" class="btn btn-ghost btn-sm">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <line x1="12" y1="5" x2="12" y2="19"/>
+          <line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        <%= t('gallery.btnAddMore') %>
+      </a>
+      <button type="button" class="btn btn-primary btn-sm" id="slideshowBtn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        <%= t('gallery.btnSlideshow') %>
+      </button>
+    </div>
+
+    <div class="gallery-grid" id="galleryGrid">
+      <% items.forEach(function (item, idx) { %>
+        <figure class="gallery-item" data-index="<%= idx %>">
+          <button type="button" class="gallery-thumb" data-index="<%= idx %>" aria-label="View photo">
+            <% if (item.imageUrl) { %>
+              <img src="<%= item.imageUrl %>" alt="<%= item.guestName || 'Wedding photo' %>" loading="lazy" />
+            <% } %>
+            <% if (item.isVideo) { %>
               <span class="play-icon" aria-hidden="true">
-                <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 4 20 12 6 20 6 4"/></svg>
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 4 20 12 6 20 6 4"/></svg>
               </span>
-            </a>
-          <% } %>
+            <% } %>
+          </button>
           <% if (item.guestName || item.message) { %>
             <figcaption>
               <% if (item.guestName) { %><strong><%= item.guestName %></strong><% } %>
@@ -42,7 +58,232 @@
         </figure>
       <% }); %>
     </div>
+
+    <!-- Lightbox -->
+    <div class="lightbox" id="lightbox" hidden role="dialog" aria-modal="true" aria-label="Photo viewer">
+      <button type="button" class="lightbox-btn lightbox-close" id="lbClose" aria-label="<%= t('lightbox.close') %>">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+      <button type="button" class="lightbox-btn lightbox-prev" id="lbPrev" aria-label="<%= t('lightbox.prev') %>">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <button type="button" class="lightbox-btn lightbox-next" id="lbNext" aria-label="<%= t('lightbox.next') %>">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+
+      <div class="lightbox-stage" id="lbStage">
+        <div class="lightbox-slides" id="lbSlides">
+          <img class="lightbox-img is-active" id="lbImageA" alt="" />
+          <img class="lightbox-img" id="lbImageB" alt="" />
+        </div>
+        <div class="lightbox-video" id="lbVideo" hidden>
+          <a href="#" id="lbVideoLink" target="_blank" rel="noopener" class="btn btn-primary">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="margin-right:6px"><polygon points="6 4 20 12 6 20 6 4"/></svg>
+            <%= t('lightbox.openInDrive') %>
+          </a>
+        </div>
+      </div>
+
+      <div class="lightbox-caption" id="lbCaption" hidden></div>
+
+      <div class="lightbox-toolbar">
+        <button type="button" class="lightbox-toolbar-btn" id="lbPlayPause" aria-label="<%= t('lightbox.play') %>">
+          <svg id="lbPlayIcon" width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          <svg id="lbPauseIcon" width="22" height="22" viewBox="0 0 24 24" fill="currentColor" hidden><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+        </button>
+        <span class="lightbox-counter" id="lbCounter">1 / <%= items.length %></span>
+      </div>
+    </div>
   <% } %>
 </main>
+
+<% if (items.length > 0) { %>
+<script>
+  (function () {
+    var items = <%- JSON.stringify(items.map(function(it){ return { imageUrl: it.fullUrl, thumb: it.imageUrl, isImage: it.isImage, isVideo: it.isVideo, webViewLink: it.webViewLink, guestName: it.guestName, message: it.message }; })) %>;
+
+    var lightbox = document.getElementById('lightbox');
+    var imgA = document.getElementById('lbImageA');
+    var imgB = document.getElementById('lbImageB');
+    var lbVideo = document.getElementById('lbVideo');
+    var lbVideoLink = document.getElementById('lbVideoLink');
+    var lbCaption = document.getElementById('lbCaption');
+    var lbCounter = document.getElementById('lbCounter');
+    var lbStage = document.getElementById('lbStage');
+    var btnClose = document.getElementById('lbClose');
+    var btnPrev = document.getElementById('lbPrev');
+    var btnNext = document.getElementById('lbNext');
+    var btnPlayPause = document.getElementById('lbPlayPause');
+    var iconPlay = document.getElementById('lbPlayIcon');
+    var iconPause = document.getElementById('lbPauseIcon');
+    var btnSlideshow = document.getElementById('slideshowBtn');
+
+    var current = 0;
+    var playing = false;
+    var slideshowTimer = null;
+    var SLIDESHOW_INTERVAL = 2500;
+    var activeImg = imgA;
+    var inactiveImg = imgB;
+
+    function swapSlots() { var t = activeImg; activeImg = inactiveImg; inactiveImg = t; }
+
+    function show(index, direction) {
+      var prevIndex = current;
+      current = ((index % items.length) + items.length) % items.length;
+      var item = items[current];
+
+      // Caption + counter actualizate imediat
+      if (item.guestName || item.message) {
+        var html = '';
+        if (item.guestName) html += '<strong>' + escapeHtml(item.guestName) + '</strong>';
+        if (item.message) html += '<span>' + escapeHtml(item.message) + '</span>';
+        lbCaption.innerHTML = html;
+        lbCaption.hidden = false;
+      } else {
+        lbCaption.hidden = true;
+      }
+      lbCounter.textContent = (current + 1) + ' / ' + items.length;
+
+      if (item.isVideo) {
+        lbVideo.hidden = false;
+        lbVideoLink.href = item.webViewLink;
+        activeImg.classList.remove('is-active');
+        inactiveImg.classList.remove('is-active', 'enter-from-right', 'enter-from-left', 'exit-to-right', 'exit-to-left');
+        return;
+      }
+
+      lbVideo.hidden = true;
+
+      // Determina directia (next/prev) - default next
+      var dir = direction;
+      if (!dir) {
+        if (current === prevIndex) dir = 'next';
+        else dir = (current > prevIndex || (current === 0 && prevIndex === items.length - 1)) ? 'next' : 'prev';
+      }
+
+      // Pregateste imaginea care vine: o pune in pozitia de start (off-screen)
+      var enterClass = (dir === 'next') ? 'enter-from-right' : 'enter-from-left';
+      var exitClass  = (dir === 'next') ? 'exit-to-left'   : 'exit-to-right';
+
+      var oldImg = activeImg;
+      var newImg = inactiveImg;
+
+      newImg.classList.remove('is-active', 'enter-from-right', 'enter-from-left', 'exit-to-right', 'exit-to-left');
+      // Pozitia initiala (off-screen)
+      newImg.classList.add(enterClass);
+      // forteaza reflow ca tranzitia urmatoare sa fie animata
+      void newImg.offsetWidth;
+      // Set src
+      newImg.src = item.imageUrl;
+      newImg.onload = function () {
+        // Activeaza tranzitia: vine la pozitia centru, cea veche pleaca
+        newImg.classList.remove(enterClass);
+        newImg.classList.add('is-active');
+        oldImg.classList.remove('is-active');
+        oldImg.classList.add(exitClass);
+      };
+
+      // swap slot-uri
+      swapSlots();
+
+      // Preload urmatoarea poza pentru smoothness
+      if (items.length > 1) {
+        var nextIdx = dir === 'next' ? (current + 1) % items.length : (current - 1 + items.length) % items.length;
+        var nextItem = items[nextIdx];
+        if (nextItem && nextItem.isImage) {
+          var p = new Image(); p.src = nextItem.imageUrl;
+        }
+      }
+    }
+
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, function(c){
+        return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];
+      });
+    }
+
+    function open(index, autoplay) {
+      show(index);
+      lightbox.hidden = false;
+      document.body.classList.add('lightbox-open');
+      if (autoplay) startSlideshow();
+    }
+    function close() {
+      lightbox.hidden = true;
+      document.body.classList.remove('lightbox-open');
+      stopSlideshow();
+    }
+    function next() { show(current + 1, 'next'); }
+    function prev() { show(current - 1, 'prev'); }
+
+    function startSlideshow() {
+      playing = true;
+      iconPlay.hidden = true;
+      iconPause.hidden = false;
+      if (slideshowTimer) clearInterval(slideshowTimer);
+      slideshowTimer = setInterval(next, SLIDESHOW_INTERVAL);
+    }
+    function stopSlideshow() {
+      playing = false;
+      iconPlay.hidden = false;
+      iconPause.hidden = true;
+      if (slideshowTimer) { clearInterval(slideshowTimer); slideshowTimer = null; }
+    }
+    function togglePlayPause() {
+      if (playing) stopSlideshow(); else startSlideshow();
+    }
+
+    // Click pe thumb deschide lightbox
+    var thumbs = document.querySelectorAll('.gallery-thumb');
+    thumbs.forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        open(parseInt(btn.getAttribute('data-index'), 10), false);
+      });
+    });
+
+    if (btnSlideshow) {
+      btnSlideshow.addEventListener('click', function () { open(0, true); });
+    }
+    btnClose.addEventListener('click', close);
+    btnPrev.addEventListener('click', function(){ stopSlideshow(); prev(); });
+    btnNext.addEventListener('click', function(){ stopSlideshow(); next(); });
+    btnPlayPause.addEventListener('click', togglePlayPause);
+
+    // Click pe fundal inchide
+    lightbox.addEventListener('click', function (e) {
+      if (e.target === lightbox || e.target === lbStage) close();
+    });
+
+    // Keyboard
+    document.addEventListener('keydown', function (e) {
+      if (lightbox.hidden) return;
+      if (e.key === 'Escape') close();
+      else if (e.key === 'ArrowLeft') { stopSlideshow(); prev(); }
+      else if (e.key === 'ArrowRight') { stopSlideshow(); next(); }
+      else if (e.key === ' ') { e.preventDefault(); togglePlayPause(); }
+    });
+
+    // Touch swipe
+    var touchStartX = 0;
+    var touchEndX = 0;
+    lbStage.addEventListener('touchstart', function(e){ touchStartX = e.changedTouches[0].screenX; }, { passive: true });
+    lbStage.addEventListener('touchend', function(e){
+      touchEndX = e.changedTouches[0].screenX;
+      var delta = touchEndX - touchStartX;
+      if (Math.abs(delta) > 50) {
+        stopSlideshow();
+        if (delta < 0) next(); else prev();
+      }
+    }, { passive: true });
+
+    // Toast - dispare dupa 4s
+    var toast = document.getElementById('uploadedToast');
+    if (toast) {
+      setTimeout(function(){ toast.classList.add('is-fading'); }, 3500);
+      setTimeout(function(){ toast.remove(); }, 4500);
+    }
+  })();
+</script>
+<% } %>
 
 <%- include('partials/footer') %>

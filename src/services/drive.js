@@ -1,58 +1,97 @@
 /**
- * Google Drive service - upload, list, delete prin Service Account.
- * Pozele sunt stocate intr-un folder Drive partajat cu service account-ul.
+ * Google Drive service - OAuth2 cu refresh token persistent.
+ * Utilizatorul se logheaza o singura data din UI-ul admin.
+ * Pozele se incarca in Drive-ul personal al utilizatorului autentificat.
  */
-const fs = require('fs');
-const path = require('path');
 const { google } = require('googleapis');
 const { Readable } = require('stream');
 
-const { getSettings } = require('./settings');
+const { getSettings, updateSettings } = require('./settings');
 
 const SCOPES = ['https://www.googleapis.com/auth/drive'];
 
 let driveClient = null;
-let serviceAccountEmail = null;
+let cachedRefreshToken = null;
 
-function loadCredentials() {
-  if (process.env.GOOGLE_SERVICE_ACCOUNT_JSON) {
-    try {
-      return JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON);
-    } catch (err) {
-      throw new Error('GOOGLE_SERVICE_ACCOUNT_JSON nu este JSON valid: ' + err.message);
-    }
-  }
-
-  const file = process.env.GOOGLE_SERVICE_ACCOUNT_FILE || './service-account.json';
-  const absolute = path.isAbsolute(file) ? file : path.join(__dirname, '..', '..', file);
-  if (!fs.existsSync(absolute)) {
+function getCredentials() {
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+  if (!clientId || !clientSecret) {
     throw new Error(
-      `Nu gasesc fisierul service-account la ${absolute}. ` +
-        'Vezi README pentru configurare Google Drive Service Account.'
+      'GOOGLE_CLIENT_ID si GOOGLE_CLIENT_SECRET nu sunt setate in .env. ' +
+        'Vezi README pentru configurare OAuth.'
     );
   }
-  return JSON.parse(fs.readFileSync(absolute, 'utf-8'));
+  return { clientId, clientSecret };
 }
 
-function getDrive() {
-  if (driveClient) return driveClient;
-  const credentials = loadCredentials();
-  serviceAccountEmail = credentials.client_email;
-  const auth = new google.auth.JWT(credentials.client_email, null, credentials.private_key, SCOPES);
-  driveClient = google.drive({ version: 'v3', auth });
-  return driveClient;
+function getRedirectUri(req) {
+  if (req) {
+    const publicUrl = process.env.PUBLIC_URL || `${req.protocol}://${req.get('host')}`;
+    return publicUrl.replace(/\/$/, '') + '/admin/drive/callback';
+  }
+  const publicUrl = process.env.PUBLIC_URL || 'http://localhost:3000';
+  return publicUrl.replace(/\/$/, '') + '/admin/drive/callback';
 }
 
-function getServiceAccountEmail() {
-  if (!serviceAccountEmail) {
+function buildOAuthClient(redirectUri) {
+  const { clientId, clientSecret } = getCredentials();
+  return new google.auth.OAuth2(clientId, clientSecret, redirectUri);
+}
+
+function generateAuthUrl(req) {
+  const oauth = buildOAuthClient(getRedirectUri(req));
+  return oauth.generateAuthUrl({
+    access_type: 'offline',
+    prompt: 'consent',
+    scope: SCOPES,
+  });
+}
+
+async function handleOAuthCallback(code, req) {
+  const oauth = buildOAuthClient(getRedirectUri(req));
+  const { tokens } = await oauth.getToken(code);
+  if (!tokens.refresh_token) {
+    throw new Error(
+      'Nu am primit refresh token de la Google. Mergi in Google Account Settings → Security → ' +
+        'Third party apps si revoca aplicatia, apoi conecteaza-te din nou.'
+    );
+  }
+  await updateSettings({ driveRefreshToken: tokens.refresh_token });
+  cachedRefreshToken = tokens.refresh_token;
+  driveClient = null;
+  return tokens;
+}
+
+async function disconnect() {
+  const settings = await getSettings();
+  const token = settings.driveRefreshToken;
+  if (token) {
     try {
-      const credentials = loadCredentials();
-      serviceAccountEmail = credentials.client_email;
+      const oauth = buildOAuthClient(getRedirectUri());
+      oauth.setCredentials({ refresh_token: token });
+      await oauth.revokeCredentials().catch(() => {});
     } catch {
-      return null;
+      // ignoram erorile la revoke
     }
   }
-  return serviceAccountEmail;
+  await updateSettings({ driveRefreshToken: '' });
+  cachedRefreshToken = null;
+  driveClient = null;
+}
+
+async function getDrive() {
+  if (driveClient) return driveClient;
+  const settings = await getSettings();
+  const refreshToken = settings.driveRefreshToken;
+  if (!refreshToken) {
+    throw new Error('Drive nu este conectat. Mergi in /admin si apasa "Conecteaza Drive".');
+  }
+  cachedRefreshToken = refreshToken;
+  const oauth = buildOAuthClient(getRedirectUri());
+  oauth.setCredentials({ refresh_token: refreshToken });
+  driveClient = google.drive({ version: 'v3', auth: oauth });
+  return driveClient;
 }
 
 async function resolveFolderId() {
@@ -66,14 +105,9 @@ async function resolveFolderId() {
 
 /**
  * Upload un buffer ca fisier nou in folderul Drive.
- * @param {Buffer} buffer continutul fisierului
- * @param {string} originalName numele original (folosit pentru extensie)
- * @param {string} mimeType
- * @param {object} [metadata] metadata aditional (ex: numele invitatului)
- * @returns {Promise<{id: string, name: string, mimeType: string}>}
  */
 async function uploadFile(buffer, originalName, mimeType, metadata = {}) {
-  const drive = getDrive();
+  const drive = await getDrive();
   const folderId = await resolveFolderId();
 
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
@@ -99,7 +133,7 @@ async function uploadFile(buffer, originalName, mimeType, metadata = {}) {
     fields: 'id, name, mimeType, createdTime, thumbnailLink, webViewLink, webContentLink',
   });
 
-  // Facem fisierul public-readable pentru a putea fi afisat in galerie fara auth
+  // Facem fisierul public-readable pentru afisare in galerie fara auth
   try {
     await drive.permissions.create({
       fileId: response.data.id,
@@ -112,11 +146,8 @@ async function uploadFile(buffer, originalName, mimeType, metadata = {}) {
   return response.data;
 }
 
-/**
- * Listeaza fisierele din folder, sortate descrescator dupa data crearii.
- */
 async function listFiles({ pageSize = 100 } = {}) {
-  const drive = getDrive();
+  const drive = await getDrive();
   const folderId = await resolveFolderId();
   const response = await drive.files.list({
     q: `'${folderId}' in parents and trashed = false`,
@@ -129,33 +160,34 @@ async function listFiles({ pageSize = 100 } = {}) {
 }
 
 async function deleteFile(fileId) {
-  const drive = getDrive();
+  const drive = await getDrive();
   await drive.files.delete({ fileId });
 }
 
 async function testConnection() {
   try {
+    const settings = await getSettings();
+    if (!settings.driveRefreshToken) {
+      return { ok: false, error: 'Drive nu este conectat. Apasa "Conecteaza Drive" in dashboard.' };
+    }
     const folderId = await resolveFolderId();
-    const drive = getDrive();
-    const folder = await drive.files.get({
-      fileId: folderId,
-      fields: 'id, name, mimeType, owners',
-    });
-    return { ok: true, folder: folder.data, serviceAccountEmail: getServiceAccountEmail() };
+    const drive = await getDrive();
+    const [folder, about] = await Promise.all([
+      drive.files.get({ fileId: folderId, fields: 'id, name, mimeType' }),
+      drive.about.get({ fields: 'user' }),
+    ]);
+    return {
+      ok: true,
+      folder: folder.data,
+      user: about.data.user,
+    };
   } catch (err) {
-    return { ok: false, error: err.message, serviceAccountEmail: getServiceAccountEmail() };
+    return { ok: false, error: err.message };
   }
 }
 
-/**
- * Returneaza un URL imagine afisabil direct (img tag).
- * Drive ofera thumbnailLink dar are dimensiune fixa - folosim un proxy intern
- * sau forma cu lh3.googleusercontent.com cand este disponibila.
- */
 function buildImageUrl(file, size = 'w1200') {
   if (file.thumbnailLink) {
-    // thumbnailLink are forma "https://lh3.googleusercontent.com/...=s220"
-    // inlocuim cu marimea ceruta
     return file.thumbnailLink.replace(/=s\d+(-c)?$/, `=${size}`);
   }
   return `https://drive.google.com/uc?export=view&id=${file.id}`;
@@ -169,6 +201,11 @@ function isVideo(file) {
   return file.mimeType && file.mimeType.startsWith('video/');
 }
 
+async function isConnected() {
+  const settings = await getSettings();
+  return Boolean(settings.driveRefreshToken);
+}
+
 module.exports = {
   uploadFile,
   listFiles,
@@ -177,5 +214,9 @@ module.exports = {
   buildImageUrl,
   isImage,
   isVideo,
-  getServiceAccountEmail,
+  generateAuthUrl,
+  handleOAuthCallback,
+  disconnect,
+  isConnected,
+  getRedirectUri,
 };

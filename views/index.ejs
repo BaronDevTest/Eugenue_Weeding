@@ -3,12 +3,17 @@
 
 <main class="hero">
   <div class="hero-inner">
-    <p class="kicker">Bun venit</p>
+    <p class="kicker"><%= t('index.kicker') %></p>
     <h1 class="hero-title"><%= settings.brideName %> <span class="amp">&</span> <%= settings.groomName %></h1>
     <% if (settings.weddingDate) { %>
       <p class="hero-date"><%= settings.weddingDate %></p>
     <% } %>
-    <p class="hero-text"><%= settings.welcomeMessage %></p>
+    <%
+      var localizedMessage = settings['welcomeMessage' + locale.charAt(0).toUpperCase() + locale.slice(1)]
+                          || settings.welcomeMessage
+                          || t('index.welcomeMessage');
+    %>
+    <p class="hero-text"><%= localizedMessage %></p>
 
     <div class="hero-actions">
       <a href="/upload" class="btn btn-primary">
@@ -16,9 +21,9 @@
           <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/>
           <circle cx="12" cy="13" r="4"/>
         </svg>
-        Adauga o poza
+        <%= t('index.btnUpload') %>
       </a>
-      <a href="/gallery" class="btn btn-ghost">Vezi galeria</a>
+      <a href="/gallery" class="btn btn-ghost"><%= t('index.btnGallery') %></a>
     </div>
   </div>
 </main>

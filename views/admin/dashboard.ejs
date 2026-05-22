@@ -8,14 +8,20 @@
     <div class="alert alert-error">
       <strong>Drive nu este conectat.</strong>
       <p><%= drivetest.error %></p>
-      <% if (drivetest.serviceAccountEmail) { %>
-        <p>Asigura-te ca ai partajat folderul Drive cu: <code><%= drivetest.serviceAccountEmail %></code></p>
-      <% } %>
-      <a href="/admin/settings" class="btn btn-primary">Configureaza Drive</a>
+      <a href="/admin/drive/connect" class="btn btn-primary" style="margin-top: 10px;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="margin-right: 6px;"><path d="M7.71 3.5L1.15 15l3.27 5.5h13.16L21 15 14.43 3.5H7.71zM5.5 17.5L9.7 10h4.6l-4.2 7.5h-4.6zm5.5-9.5L13.5 4h2.93l2.55 4.5H11zm-3.85 0L4.6 13l-2.45-4.5L4.6 4l2.55 4z"/></svg>
+        Conecteaza Drive cu Google
+      </a>
     </div>
   <% } else { %>
     <div class="alert alert-success">
-      Drive conectat la folderul <strong><%= drivetest.folder.name %></strong>.
+      Drive conectat la folderul <strong><%= drivetest.folder.name %></strong>
+      <% if (drivetest.user && drivetest.user.emailAddress) { %>
+        ca <code><%= drivetest.user.emailAddress %></code>
+      <% } %>
+      <form method="POST" action="/admin/drive/disconnect" style="display: inline; margin-left: 12px;" onsubmit="return confirm('Sigur vrei sa deconectezi Drive?');">
+        <button type="submit" class="btn-link" style="color: #842018;">Deconecteaza</button>
+      </form>
     </div>
   <% } %>
 

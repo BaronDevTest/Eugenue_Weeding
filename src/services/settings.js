@@ -9,13 +9,18 @@ const bcrypt = require('bcryptjs');
 const SETTINGS_PATH = path.join(__dirname, '..', '..', 'config', 'settings.json');
 
 const DEFAULTS = {
-  brideName: 'Mireasa',
-  groomName: 'Mire',
-  weddingDate: '',
+  brideName: 'Emilia',
+  groomName: 'Eugen',
+  weddingDate: '29.05.2026',
   welcomeMessage: 'Bine ati venit la nunta noastra! Va rugam sa incarcati pozele facute, pentru a le pastra ca amintire.',
-  driveFolderId: '',
+  welcomeMessageRo: 'Bine ati venit la nunta noastra! Va rugam sa incarcati pozele facute, pentru a le pastra ca amintire.',
+  welcomeMessageEn: 'Welcome to our wedding! Please upload the photos you take so we can keep them as memories.',
+  welcomeMessageRu: 'Добро пожаловать на нашу свадьбу! Пожалуйста, загружайте сделанные фотографии, чтобы сохранить их на память.',
+  driveFolderId: '1ijzBLSdCCHX34FKl43fddPcdJshwGXaA',
+  driveRefreshToken: '',
+  driveConnectedAs: '',
   adminPasswordHash: '',
-  maxUploadMb: 25,
+  maxUploadMb: 100,
   allowMessages: true,
 };
 

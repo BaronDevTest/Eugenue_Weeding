@@ -1,17 +1,36 @@
 <%- include('../partials/head') %>
 <%- include('layout-header') %>
 
-<main class="admin-page">
+<main class="admin-page photos-page">
   <h1 class="page-title">Moderare poze</h1>
-  <p class="page-subtitle"><%= items.length %> fisiere in album. Apasa pe butonul rosu pentru a sterge un fisier.</p>
+  <p class="page-subtitle"><span id="totalCount"><%= items.length %></span> fisiere in album.</p>
 
   <% if (items.length === 0) { %>
     <div class="empty-state"><p>Inca nu a fost incarcata nicio poza.</p></div>
   <% } else { %>
-    <div class="moderate-grid">
+    <!-- Toolbar selectie multipla -->
+    <div class="bulk-toolbar" id="bulkToolbar">
+      <label class="bulk-check">
+        <input type="checkbox" id="selectAll" />
+        <span><strong id="selectedCount">0</strong> selectate</span>
+      </label>
+      <div class="bulk-actions">
+        <button type="button" class="btn btn-ghost btn-sm" id="clearSelectionBtn" disabled>Deselecteaza</button>
+        <button type="button" class="btn btn-danger btn-sm" id="deleteSelectedBtn" disabled>
+          <span class="btn-spinner" hidden></span>
+          <span class="btn-label">Sterge selectate</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="moderate-grid" id="photoGrid">
       <% items.forEach(function (item) { %>
-        <div class="moderate-item">
-          <div class="moderate-thumb">
+        <div class="moderate-item" data-id="<%= item.id %>" id="item-<%= item.id %>">
+          <label class="moderate-thumb">
+            <input type="checkbox" class="photo-checkbox" value="<%= item.id %>" />
+            <span class="check-overlay" aria-hidden="true">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </span>
             <% if (item.isImage) { %>
               <img src="<%= item.imageUrl %>" alt="" loading="lazy" />
             <% } else if (item.isVideo) { %>
@@ -22,19 +41,195 @@
             <% } else { %>
               <div class="video-placeholder"><span class="badge">FILE</span></div>
             <% } %>
-          </div>
+            <div class="item-loading" aria-hidden="true">
+              <div class="item-spinner"></div>
+            </div>
+          </label>
           <div class="moderate-meta">
             <% if (item.guestName) { %><strong><%= item.guestName %></strong><% } %>
             <% if (item.message) { %><p class="caption-msg"><%= item.message %></p><% } %>
             <small><%= new Date(item.createdTime).toLocaleString('ro-RO') %></small>
           </div>
-          <form method="POST" action="/admin/photos/<%= item.id %>/delete" onsubmit="return confirm('Sterg fisierul?');">
-            <button type="submit" class="btn btn-danger btn-block">Sterge</button>
-          </form>
+          <button type="button" class="btn btn-danger btn-sm btn-block delete-one-btn" data-id="<%= item.id %>">
+            <span class="btn-spinner" hidden></span>
+            <span class="btn-label">Sterge</span>
+          </button>
         </div>
       <% }); %>
     </div>
   <% } %>
 </main>
+
+<% if (items.length > 0) { %>
+<script>
+  (function () {
+    var grid = document.getElementById('photoGrid');
+    var selectAll = document.getElementById('selectAll');
+    var selectedCountEl = document.getElementById('selectedCount');
+    var totalCountEl = document.getElementById('totalCount');
+    var deleteSelectedBtn = document.getElementById('deleteSelectedBtn');
+    var clearSelectionBtn = document.getElementById('clearSelectionBtn');
+    var checkboxes = function () { return grid.querySelectorAll('.photo-checkbox'); };
+
+    function selectedIds() {
+      return Array.prototype.filter.call(checkboxes(), function (c) { return c.checked; }).map(function (c) { return c.value; });
+    }
+    function updateSelectionUI() {
+      var n = selectedIds().length;
+      selectedCountEl.textContent = n;
+      var hasSelection = n > 0;
+      deleteSelectedBtn.disabled = !hasSelection;
+      clearSelectionBtn.disabled = !hasSelection;
+      // Update parent items visual
+      Array.prototype.forEach.call(checkboxes(), function (c) {
+        var item = c.closest('.moderate-item');
+        if (item) item.classList.toggle('is-selected', c.checked);
+      });
+      // Update "Select all" state
+      var all = checkboxes();
+      var allChecked = all.length > 0 && Array.prototype.every.call(all, function (c) { return c.checked; });
+      var someChecked = Array.prototype.some.call(all, function (c) { return c.checked; });
+      selectAll.checked = allChecked;
+      selectAll.indeterminate = someChecked && !allChecked;
+    }
+
+    // Schimbarea checkbox-urilor individuale
+    grid.addEventListener('change', function (e) {
+      if (e.target.classList && e.target.classList.contains('photo-checkbox')) {
+        updateSelectionUI();
+      }
+    });
+
+    // Select all toggle
+    selectAll.addEventListener('change', function () {
+      var checked = selectAll.checked;
+      Array.prototype.forEach.call(checkboxes(), function (c) { c.checked = checked; });
+      updateSelectionUI();
+    });
+
+    // Clear selection
+    clearSelectionBtn.addEventListener('click', function () {
+      Array.prototype.forEach.call(checkboxes(), function (c) { c.checked = false; });
+      updateSelectionUI();
+    });
+
+    // ---------- Delete logic ----------
+    function setItemLoading(id, loading) {
+      var item = document.getElementById('item-' + id);
+      if (item) item.classList.toggle('is-deleting', loading);
+    }
+
+    function removeItemFromDom(id) {
+      var item = document.getElementById('item-' + id);
+      if (item) {
+        item.classList.add('is-removing');
+        setTimeout(function () {
+          item.remove();
+          updateTotalCount();
+          updateSelectionUI();
+          // Daca am sters totul, reload
+          if (checkboxes().length === 0) window.location.reload();
+        }, 250);
+      }
+    }
+    function updateTotalCount() {
+      var remaining = grid.querySelectorAll('.moderate-item').length;
+      totalCountEl.textContent = remaining;
+    }
+
+    function setButtonLoading(btn, loading) {
+      btn.disabled = loading;
+      var spinner = btn.querySelector('.btn-spinner');
+      var label = btn.querySelector('.btn-label');
+      if (spinner) spinner.hidden = !loading;
+      if (loading && label) {
+        btn.dataset.originalLabel = label.textContent;
+        label.textContent = 'Se sterge...';
+      } else if (label && btn.dataset.originalLabel) {
+        label.textContent = btn.dataset.originalLabel;
+      }
+    }
+
+    function deleteOne(id, btn) {
+      setItemLoading(id, true);
+      if (btn) setButtonLoading(btn, true);
+      return fetch('/admin/photos/' + id + '/delete', {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+      })
+        .then(function (r) { return r.json().then(function (d) { return { status: r.status, data: d }; }); })
+        .then(function (res) {
+          if (res.status >= 200 && res.status < 300 && res.data.ok) {
+            removeItemFromDom(id);
+          } else {
+            alert((res.data && res.data.error) || 'Eroare la stergere.');
+            setItemLoading(id, false);
+            if (btn) setButtonLoading(btn, false);
+          }
+        })
+        .catch(function (err) {
+          alert('Eroare retea: ' + err.message);
+          setItemLoading(id, false);
+          if (btn) setButtonLoading(btn, false);
+        });
+    }
+
+    // Click pe butonul Sterge individual
+    grid.addEventListener('click', function (e) {
+      var btn = e.target.closest('.delete-one-btn');
+      if (!btn) return;
+      e.preventDefault();
+      if (!confirm('Sterg fisierul?')) return;
+      deleteOne(btn.dataset.id, btn);
+    });
+
+    // Click pe Sterge selectate (bulk)
+    deleteSelectedBtn.addEventListener('click', function () {
+      var ids = selectedIds();
+      if (ids.length === 0) return;
+      if (!confirm('Sterg ' + ids.length + ' fisier' + (ids.length === 1 ? '' : 'e') + '?')) return;
+
+      setButtonLoading(deleteSelectedBtn, true);
+      ids.forEach(function (id) { setItemLoading(id, true); });
+
+      fetch('/admin/photos/delete-bulk', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({ ids: ids }),
+      })
+        .then(function (r) { return r.json().then(function (d) { return { status: r.status, data: d }; }); })
+        .then(function (res) {
+          if (res.status >= 200 && res.status < 300 && res.data.ok) {
+            // Sterg din DOM doar pe cele care au reusit
+            res.data.results.forEach(function (item) {
+              if (item.ok) removeItemFromDom(item.id);
+              else setItemLoading(item.id, false);
+            });
+            setButtonLoading(deleteSelectedBtn, false);
+            var failed = res.data.results.filter(function (i) { return !i.ok; });
+            if (failed.length > 0) {
+              alert(failed.length + ' fisier(e) nu au putut fi sters(e).');
+            }
+          } else {
+            alert((res.data && res.data.error) || 'Eroare la stergere bulk.');
+            ids.forEach(function (id) { setItemLoading(id, false); });
+            setButtonLoading(deleteSelectedBtn, false);
+          }
+        })
+        .catch(function (err) {
+          alert('Eroare retea: ' + err.message);
+          ids.forEach(function (id) { setItemLoading(id, false); });
+          setButtonLoading(deleteSelectedBtn, false);
+        });
+    });
+
+    updateSelectionUI();
+  })();
+</script>
+<% } %>
 
 <%- include('../partials/footer') %>

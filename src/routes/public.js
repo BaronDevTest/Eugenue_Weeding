@@ -13,8 +13,8 @@ const router = express.Router();
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
-    fileSize: 50 * 1024 * 1024, // 50MB hard cap; cap mai mic vine din settings
-    files: 10,
+    fileSize: 110 * 1024 * 1024, // 110MB hard cap; cap real vine din settings.maxUploadMb
+    files: 50,
   },
   fileFilter: (req, file, cb) => {
     if (file.mimetype.startsWith('image/') || file.mimetype.startsWith('video/')) {
@@ -34,25 +34,32 @@ router.get('/upload', async (req, res) => {
   res.render('upload', { title: 'Adauga poze' });
 });
 
+// Pagina de success - acum redirect la galerie cu flag
+router.get('/upload-success', (req, res) => {
+  const count = Math.max(1, parseInt(req.query.count, 10) || 1);
+  res.redirect(`/gallery?uploaded=${count}`);
+});
+
 // Endpoint upload
-router.post('/upload', upload.array('photos', 10), async (req, res, next) => {
+router.post('/upload', upload.array('photos', 50), async (req, res, next) => {
+  const isXhr = req.xhr || req.get('X-Requested-With') === 'XMLHttpRequest' || req.accepts(['json', 'html']) === 'json';
+
+  function fail(status, message) {
+    if (isXhr) return res.status(status).json({ ok: false, error: message });
+    return res.status(status).render('upload', { title: req.t('upload.title'), error: message });
+  }
+
   try {
     const settings = await getSettings();
     const maxBytes = (settings.maxUploadMb || 25) * 1024 * 1024;
 
     if (!req.files || req.files.length === 0) {
-      return res.status(400).render('upload', {
-        title: 'Adauga poze',
-        error: 'Nu ai selectat nicio poza.',
-      });
+      return fail(400, req.t('upload.errorNoFiles'));
     }
 
     for (const f of req.files) {
       if (f.size > maxBytes) {
-        return res.status(400).render('upload', {
-          title: 'Adauga poze',
-          error: `Fisierul "${f.originalname}" depaseste limita de ${settings.maxUploadMb}MB.`,
-        });
+        return fail(400, req.t('upload.errorTooLarge', { name: f.originalname, max: settings.maxUploadMb }));
       }
     }
 
@@ -70,18 +77,13 @@ router.post('/upload', upload.array('photos', 10), async (req, res, next) => {
       }
     } catch (err) {
       console.error('[upload] Drive error:', err);
-      return res.status(500).render('upload', {
-        title: 'Adauga poze',
-        error:
-          'Nu am putut salva pozele. Te rugam sa incerci din nou sau sa ii spui gazdei. ' +
-          '(Detaliu tehnic: ' + err.message + ')',
-      });
+      return fail(500, req.t('upload.errorGeneric') + ' (' + err.message + ')');
     }
 
-    res.render('upload-success', {
-      title: 'Multumim!',
-      count: uploaded.length,
-    });
+    if (isXhr) {
+      return res.json({ ok: true, count: uploaded.length, redirectTo: `/gallery?uploaded=${uploaded.length}` });
+    }
+    res.redirect(`/gallery?uploaded=${uploaded.length}`);
   } catch (err) {
     next(err);
   }
@@ -95,7 +97,7 @@ router.get('/gallery', async (req, res, next) => {
       files = await drive.listFiles({ pageSize: 200 });
     } catch (err) {
       console.warn('[gallery] Drive indisponibil:', err.message);
-      return res.render('gallery', { title: 'Galerie', items: [], driveError: err.message });
+      return res.render('gallery', { title: req.t('gallery.title'), items: [], driveError: err.message, uploaded: 0 });
     }
     const items = files.map((f) => ({
       id: f.id,
@@ -110,7 +112,8 @@ router.get('/gallery', async (req, res, next) => {
       guestName: (f.properties && f.properties.guestName) || '',
       message: (f.properties && f.properties.message) || f.description || '',
     }));
-    res.render('gallery', { title: 'Galerie', items, driveError: null });
+    const uploaded = Math.max(0, parseInt(req.query.uploaded, 10) || 0);
+    res.render('gallery', { title: req.t('gallery.title'), items, driveError: null, uploaded });
   } catch (err) {
     next(err);
   }

@@ -8,17 +8,17 @@
       <polyline points="22 4 12 14.01 9 11.01"/>
     </svg>
   </div>
-  <h1 class="page-title">Multumim!</h1>
+  <h1 class="page-title"><%= t('success.title') %></h1>
   <p class="page-subtitle">
     <% if (count === 1) { %>
-      Poza ta a fost adaugata cu succes in albumul nuntii.
+      <%= t('success.subtitleOne') %>
     <% } else { %>
-      Cele <%= count %> fisiere au fost adaugate cu succes in albumul nuntii.
+      <%= t('success.subtitleMany', { count: count }) %>
     <% } %>
   </p>
   <div class="hero-actions">
-    <a href="/upload" class="btn btn-primary">Mai adaug o poza</a>
-    <a href="/gallery" class="btn btn-ghost">Vezi galeria</a>
+    <a href="/upload" class="btn btn-primary"><%= t('success.btnMore') %></a>
+    <a href="/gallery" class="btn btn-ghost"><%= t('success.btnGallery') %></a>
   </div>
 </main>
 

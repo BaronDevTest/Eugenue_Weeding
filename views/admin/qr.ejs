@@ -2,31 +2,53 @@
 <%- include('layout-header') %>
 
 <main class="admin-page">
-  <h1 class="page-title">QR Code</h1>
-  <p class="page-subtitle">Scaneaza pentru a deschide direct pagina de <%= target === '/gallery' ? 'galerie' : 'upload' %>.</p>
+  <h1 class="page-title">QR Code pentru invitatii</h1>
+  <p class="page-subtitle">Acest QR duce direct la pagina principala a aplicatiei. Tipareste-l pe invitatii, mese sau panoul de la intrare.</p>
 
-  <div class="qr-tabs">
-    <a href="/admin/qr?target=upload" class="<%= target !== '/gallery' ? 'active' : '' %>">QR pentru upload</a>
-    <a href="/admin/qr?target=gallery" class="<%= target === '/gallery' ? 'active' : '' %>">QR pentru galerie</a>
-  </div>
+  <% if (!isProduction) { %>
+    <div class="alert alert-error">
+      <strong>Atentie - URL local detectat!</strong>
+      <p>QR-ul codeaza URL-ul: <code><%= url %></code></p>
+      <p>Acesta este un URL <strong>local</strong> care nu va functiona pentru invitati. Inainte de a tipari QR-ul, seteaza variabila <code>PUBLIC_URL</code> in fisierul <code>.env</code> la URL-ul real al site-ului (ex: <code>https://nunta-emilia-eugen.ro</code>) si reporneste aplicatia.</p>
+    </div>
+  <% } %>
 
-  <div class="qr-card">
+  <div class="qr-card qr-card-big">
     <img src="<%= dataUrl %>" alt="QR Code" class="qr-image" />
-    <p class="qr-url"><%= url %></p>
+    <p class="qr-url">
+      <span class="qr-url-label">URL codat:</span>
+      <code><%= url %></code>
+    </p>
     <div class="qr-actions">
-      <a href="/admin/qr/download?target=<%= target === '/gallery' ? 'gallery' : 'upload' %>" class="btn btn-primary" download>
-        Descarca PNG (1200px)
+      <a href="/admin/qr/download" class="btn btn-primary" download>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Descarca PNG (1500px)
       </a>
-      <a href="<%= url %>" target="_blank" rel="noopener" class="btn btn-ghost">Deschide link</a>
+      <a href="/admin/qr/download.svg" class="btn btn-ghost" download>
+        Descarca SVG vectorial
+      </a>
+      <a href="<%= url %>" target="_blank" rel="noopener" class="btn btn-ghost">Testeaza link</a>
     </div>
   </div>
 
   <div class="info-card">
-    <h3>Cum folosesti QR-ul</h3>
+    <h3>Important - Stabilitatea QR-ului</h3>
     <ul>
-      <li>Descarca PNG-ul si printeaza-l pe invitatii, pe mese sau pe un panou la intrarea in sala.</li>
-      <li>Invitatii scaneaza cu camera telefonului, ajung direct pe pagina si pot incarca pozele.</li>
-      <li>Asigura-te ca ai setat <strong>PUBLIC_URL</strong> in fisierul .env la URL-ul real al site-ului (ex: https://nunta.exemplu.ro).</li>
+      <li><strong>QR-ul codeaza un singur URL fix:</strong> <code><%= url %></code></li>
+      <li>Acest URL <strong>NU trebuie sa se schimbe niciodata</strong> dupa ce ai tiparit invitatiile.</li>
+      <li>Daca schimbi domeniul sau muti aplicatia, QR-ul tiparit va deveni inutil.</li>
+      <li>Recomandare: cumpara un domeniu propriu si seteaza-l in <code>PUBLIC_URL</code> inainte de a tipari.</li>
+    </ul>
+  </div>
+
+  <div class="info-card">
+    <h3>Sfaturi pentru tipar</h3>
+    <ul>
+      <li><strong>SVG-ul</strong> e cel mai bun pentru tipar - poate fi marit la orice dimensiune fara sa se piarda calitatea.</li>
+      <li><strong>PNG-ul 1500px</strong> e bun pentru documente, dar pentru bannere mari foloseste SVG.</li>
+      <li>Pastreaza un contrast bun: fundal alb, QR negru. Nu pune QR-ul pe poze sau pe culori prea vii.</li>
+      <li>Dimensiune minima recomandata pe invitatii: <strong>3x3 cm</strong>.</li>
+      <li>Lasa un spatiu alb in jurul QR-ului (margine de cel putin 5mm) pentru scanare optima.</li>
     </ul>
   </div>
 </main>

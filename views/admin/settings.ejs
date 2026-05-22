@@ -25,8 +25,16 @@
         </div>
       </div>
       <div class="form-row">
-        <label for="welcomeMessage">Mesaj de welcome</label>
-        <textarea id="welcomeMessage" name="welcomeMessage" rows="3" maxlength="500"><%= settings.welcomeMessage %></textarea>
+        <label for="welcomeMessageRo">Mesaj de welcome - Romana <span class="optional">(RO)</span></label>
+        <textarea id="welcomeMessageRo" name="welcomeMessageRo" rows="3" maxlength="500"><%= settings.welcomeMessageRo || settings.welcomeMessage || '' %></textarea>
+      </div>
+      <div class="form-row">
+        <label for="welcomeMessageEn">Welcome message - English <span class="optional">(EN)</span></label>
+        <textarea id="welcomeMessageEn" name="welcomeMessageEn" rows="3" maxlength="500"><%= settings.welcomeMessageEn || '' %></textarea>
+      </div>
+      <div class="form-row">
+        <label for="welcomeMessageRu">Приветственное сообщение - Русский <span class="optional">(RU)</span></label>
+        <textarea id="welcomeMessageRu" name="welcomeMessageRu" rows="3" maxlength="500"><%= settings.welcomeMessageRu || '' %></textarea>
       </div>
       <div class="form-row checkbox-row">
         <label>
@@ -38,11 +46,21 @@
 
     <fieldset>
       <legend>Google Drive</legend>
-      <% if (serviceAccountEmail) { %>
-        <p class="muted">Service account: <code><%= serviceAccountEmail %></code></p>
-        <p class="muted">Partajeaza folderul Drive cu email-ul de mai sus (cu drepturi de Editor) inainte de a salva.</p>
+      <% if (driveConnected) { %>
+        <p class="muted">
+          <strong style="color: #27ae60;">&#10003; Conectat</strong>
+          <% if (settings.driveConnectedAs) { %>
+            ca <code><%= settings.driveConnectedAs %></code>
+          <% } %>
+        </p>
+        <p class="muted">
+          <form method="POST" action="/admin/drive/disconnect" style="display: inline;" onsubmit="return confirm('Sigur vrei sa deconectezi Drive?');">
+            <button type="submit" class="btn-link" style="color: #842018;">Deconecteaza Drive</button>
+          </form>
+        </p>
       <% } else { %>
-        <div class="alert alert-error">Nu am gasit fisierul service-account.json. Vezi README pentru configurare.</div>
+        <p class="muted">Drive nu este conectat.</p>
+        <p><a href="/admin/drive/connect" class="btn btn-primary">Conecteaza Drive cu Google</a></p>
       <% } %>
       <div class="form-row">
         <label for="driveFolderId">ID folder Google Drive</label>
