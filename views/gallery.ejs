@@ -88,8 +88,8 @@
 
       <div class="lightbox-toolbar">
         <button type="button" class="lightbox-toolbar-btn" id="lbPlayPause" aria-label="<%= t('lightbox.play') %>">
-          <svg id="lbPlayIcon" width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-          <svg id="lbPauseIcon" width="22" height="22" viewBox="0 0 24 24" fill="currentColor" hidden><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+          <svg class="icon-play" width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          <svg class="icon-pause" width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
         </button>
         <span class="lightbox-counter" id="lbCounter">1 / <%= items.length %></span>
       </div>
@@ -114,8 +114,6 @@
     var btnPrev = document.getElementById('lbPrev');
     var btnNext = document.getElementById('lbNext');
     var btnPlayPause = document.getElementById('lbPlayPause');
-    var iconPlay = document.getElementById('lbPlayIcon');
-    var iconPause = document.getElementById('lbPauseIcon');
     var btnSlideshow = document.getElementById('slideshowBtn');
 
     var current = 0;
@@ -218,15 +216,15 @@
 
     function startSlideshow() {
       playing = true;
-      iconPlay.hidden = true;
-      iconPause.hidden = false;
+      btnPlayPause.classList.add('is-playing');
+      btnPlayPause.setAttribute('aria-label', <%- JSON.stringify(t('lightbox.pause')) %>);
       if (slideshowTimer) clearInterval(slideshowTimer);
       slideshowTimer = setInterval(next, SLIDESHOW_INTERVAL);
     }
     function stopSlideshow() {
       playing = false;
-      iconPlay.hidden = false;
-      iconPause.hidden = true;
+      btnPlayPause.classList.remove('is-playing');
+      btnPlayPause.setAttribute('aria-label', <%- JSON.stringify(t('lightbox.play')) %>);
       if (slideshowTimer) { clearInterval(slideshowTimer); slideshowTimer = null; }
     }
     function togglePlayPause() {

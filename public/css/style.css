@@ -642,8 +642,16 @@ body.lightbox-open { overflow: hidden; }
   align-items: center;
   justify-content: center;
   transition: transform 0.12s ease;
+  padding: 0;
+  position: relative;
 }
 .lightbox-toolbar-btn:hover { transform: scale(1.08); }
+/* Default: arata play, ascunde pause */
+.lightbox-toolbar-btn .icon-pause { display: none; }
+.lightbox-toolbar-btn .icon-play { display: block; }
+/* Cand slideshow ruleaza: arata pause, ascunde play */
+.lightbox-toolbar-btn.is-playing .icon-play { display: none; }
+.lightbox-toolbar-btn.is-playing .icon-pause { display: block; }
 .lightbox-counter {
   color: rgba(255,255,255,0.85);
   font-size: 0.85rem;
