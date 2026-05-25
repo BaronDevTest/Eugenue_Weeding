@@ -33,7 +33,7 @@ app.use(
         scriptSrc: ["'self'", "'unsafe-inline'"],
         styleSrc: ["'self'", "'unsafe-inline'"],
         fontSrc: ["'self'"],
-        imgSrc: ["'self'", 'data:', 'https://drive.google.com', 'https://*.googleusercontent.com', 'https://lh3.googleusercontent.com'],
+        imgSrc: ["'self'", 'data:', 'blob:', 'https://drive.google.com', 'https://*.googleusercontent.com', 'https://lh3.googleusercontent.com'],
         connectSrc: ["'self'"],
       },
     },

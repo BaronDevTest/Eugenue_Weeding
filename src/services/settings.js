@@ -16,7 +16,7 @@ const DEFAULTS = {
   welcomeMessageRo: 'Bine ati venit la nunta noastra! Va rugam sa incarcati pozele facute, pentru a le pastra ca amintire.',
   welcomeMessageEn: 'Welcome to our wedding! Please upload the photos you take so we can keep them as memories.',
   welcomeMessageRu: 'Добро пожаловать на нашу свадьбу! Пожалуйста, загружайте сделанные фотографии, чтобы сохранить их на память.',
-  driveFolderId: '1ijzBLSdCCHX34FKl43fddPcdJshwGXaA',
+  driveFolderId: '1hlIuYe4NqB-Pda7zF-za9E2VORhyrRt6',
   driveRefreshToken: '',
   driveConnectedAs: '',
   adminPasswordHash: '',

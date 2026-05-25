@@ -95,12 +95,6 @@ a { color: var(--accent-dark); }
 .back-floating svg { color: var(--accent-dark); flex-shrink: 0; }
 .back-label { white-space: nowrap; }
 
-/* Pe ecrane mici, ascundem textul ca sa nu se suprapuna cu lang-switcher */
-@media (max-width: 380px) {
-  .back-label { display: none; }
-  .back-floating { padding: 8px 10px; }
-}
-
 /* ---------- Floating language switcher (colt sus dreapta) ---------- */
 .lang-floating {
   position: fixed;

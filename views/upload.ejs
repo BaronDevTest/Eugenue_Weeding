@@ -123,10 +123,13 @@
       if (accumulated.length === 0) {
         previewSection.hidden = true;
         content.hidden = false;
+        dropzone.hidden = false;
         return;
       }
+      // Cand sunt poze selectate, ascundem complet dropzone-ul si folosim doar "Add more"
       content.hidden = true;
       previewSection.hidden = false;
+      dropzone.hidden = true;
 
       accumulated.forEach(function (file, index) {
         var item = document.createElement('div');
