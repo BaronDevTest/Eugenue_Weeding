@@ -11,3 +11,8 @@ Thumbs.db
 .idea/
 server.log
 server.err.log
+load-test.js
+load-cleanup.js
+production-gallery.html
+diagnose.js
+diagnose-output.txt
