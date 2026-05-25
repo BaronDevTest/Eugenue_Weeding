@@ -249,8 +249,11 @@ a { color: var(--accent-dark); }
   min-height: 32px;
 }
 
-/* ---------- Pages ---------- */
-.page { max-width: 720px; margin: 0 auto; padding: 24px 16px 48px; width: 100%; }
+/* ---------- Pages ----------
+   padding-top mai mare pentru a evita suprapunerea cu butonul Back + lang switcher
+   (ambele sunt floating la top: 14px cu inaltime ~40px = ocupa pana la ~54px).
+*/
+.page { max-width: 720px; margin: 0 auto; padding: 72px 16px 48px; width: 100%; }
 .page-title {
   font-family: var(--serif);
   font-size: clamp(1.85rem, 8vw, 2.5rem);
@@ -939,7 +942,7 @@ body.lightbox-open { overflow: hidden; }
   .hero-actions { flex-direction: row; align-items: center; }
   .hero-actions .btn { width: auto; }
 
-  .page { padding: 32px 24px 64px; }
+  .page { padding: 80px 24px 64px; }
 
   .gallery-grid { grid-template-columns: repeat(3, 1fr); gap: 10px; }
   .moderate-grid { grid-template-columns: repeat(2, 1fr); }
