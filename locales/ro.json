@@ -23,6 +23,7 @@
   "upload.messagePlaceholder": "Casa de piatra!",
   "upload.optional": "(optional)",
   "upload.submit": "Trimite pozele",
+  "upload.compressing": "Se pregătesc pozele...",
   "upload.uploading": "Se incarca...",
   "upload.progress": "{{percent}}%",
   "upload.errorNoFiles": "Nu ai selectat nicio poza.",

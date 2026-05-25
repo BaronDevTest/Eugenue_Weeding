@@ -66,22 +66,38 @@ router.post('/upload', upload.array('photos', 50), async (req, res, next) => {
     const guestName = (req.body.guestName || '').trim().slice(0, 60);
     const message = (req.body.message || '').trim().slice(0, 280);
 
-    const uploaded = [];
-    try {
-      for (const file of req.files) {
-        const result = await drive.uploadFile(file.buffer, file.originalname, file.mimetype, {
-          guestName,
-          message,
-        });
-        uploaded.push(result);
-      }
-    } catch (err) {
-      console.error('[upload] Drive error:', err);
-      return fail(500, req.t('upload.errorGeneric') + ' (' + err.message + ')');
+    // Upload paralel in Drive - toate fisierele in acelasi timp, nu secvential.
+    // Folosim allSettled ca sa nu pierdem upload-urile reusite cand unul singur esueaza.
+    const results = await Promise.allSettled(
+      req.files.map((file) =>
+        drive.uploadFile(file.buffer, file.originalname, file.mimetype, { guestName, message })
+      )
+    );
+
+    const uploaded = results.filter((r) => r.status === 'fulfilled').map((r) => r.value);
+    const failed = results.filter((r) => r.status === 'rejected');
+
+    if (failed.length > 0) {
+      console.error(
+        '[upload] %d/%d failed:',
+        failed.length,
+        req.files.length,
+        failed.map((f) => f.reason && f.reason.message).slice(0, 3)
+      );
+    }
+
+    if (uploaded.length === 0) {
+      const firstErr = failed[0] && failed[0].reason && failed[0].reason.message;
+      return fail(500, req.t('upload.errorGeneric') + (firstErr ? ' (' + firstErr + ')' : ''));
     }
 
     if (isXhr) {
-      return res.json({ ok: true, count: uploaded.length, redirectTo: `/gallery?uploaded=${uploaded.length}` });
+      return res.json({
+        ok: true,
+        count: uploaded.length,
+        failed: failed.length,
+        redirectTo: `/gallery?uploaded=${uploaded.length}`,
+      });
     }
     res.redirect(`/gallery?uploaded=${uploaded.length}`);
   } catch (err) {

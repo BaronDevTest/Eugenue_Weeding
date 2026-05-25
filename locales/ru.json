@@ -23,6 +23,7 @@
   "upload.messagePlaceholder": "Поздравляем!",
   "upload.optional": "(необязательно)",
   "upload.submit": "Отправить фото",
+  "upload.compressing": "Подготовка фото...",
   "upload.uploading": "Загрузка...",
   "upload.progress": "{{percent}}%",
   "upload.errorNoFiles": "Вы не выбрали ни одной фотографии.",

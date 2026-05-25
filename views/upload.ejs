@@ -109,6 +109,7 @@
 
     var i18n = {
       uploading: <%- JSON.stringify(t('upload.uploading')) %>,
+      compressing: <%- JSON.stringify(t('upload.compressing')) %>,
       errorGeneric: <%- JSON.stringify(t('upload.errorGeneric')) %>,
       filesSelected: <%- JSON.stringify(t('upload.filesSelected')) %>,
       filesSelectedPlural: <%- JSON.stringify(t('upload.filesSelectedPlural')) %>,
@@ -117,6 +118,70 @@
       removeFile: <%- JSON.stringify(t('upload.removeFile')) %>,
       maxMb: <%= settings.maxUploadMb %>
     };
+
+    // ============================================================
+    // Compresie imagini client-side (Canvas API).
+    // Reduce poza de la 3-5MB (telefon) la ~300-500KB pastrand calitate buna.
+    // Skip pentru fisiere non-imagine (video) si pentru poze deja mici (<400KB).
+    // Daca compresia esueaza din orice motiv (HEIC fara suport, OOM etc.),
+    // se trimite originalul.
+    // ============================================================
+    var COMPRESS_MAX_DIM = 1920;   // px - dimensiunea max
+    var COMPRESS_QUALITY = 0.85;   // JPEG quality 0-1
+    var COMPRESS_SKIP_BELOW = 400 * 1024; // sub 400KB nu mai are sens
+
+    function compressImage(file) {
+      return new Promise(function (resolve) {
+        if (!file.type || !file.type.startsWith('image/') || file.size < COMPRESS_SKIP_BELOW) {
+          return resolve(file); // skip - returneaza originalul
+        }
+        var img = new Image();
+        var url = URL.createObjectURL(file);
+        var done = false;
+        var fallback = function () { if (!done) { done = true; URL.revokeObjectURL(url); resolve(file); } };
+        img.onerror = fallback;
+        img.onload = function () {
+          try {
+            var w = img.naturalWidth, h = img.naturalHeight;
+            if (w > COMPRESS_MAX_DIM || h > COMPRESS_MAX_DIM) {
+              if (w >= h) { h = Math.round(h * COMPRESS_MAX_DIM / w); w = COMPRESS_MAX_DIM; }
+              else        { w = Math.round(w * COMPRESS_MAX_DIM / h); h = COMPRESS_MAX_DIM; }
+            }
+            var canvas = document.createElement('canvas');
+            canvas.width = w; canvas.height = h;
+            var ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, w, h);
+            canvas.toBlob(function (blob) {
+              URL.revokeObjectURL(url);
+              if (!blob || blob.size >= file.size) {
+                // Compresia nu a ajutat - folosim originalul
+                done = true; return resolve(file);
+              }
+              // Nume cu extensie jpg ca sa fie clar pe Drive
+              var newName = file.name.replace(/\.[^./\\]+$/, '') + '.jpg';
+              var compressed = new File([blob], newName, { type: 'image/jpeg', lastModified: Date.now() });
+              done = true; resolve(compressed);
+            }, 'image/jpeg', COMPRESS_QUALITY);
+          } catch (e) {
+            fallback();
+          }
+        };
+        img.src = url;
+        // safety timeout - daca dureaza mult, abandonam si trimitem originalul
+        setTimeout(fallback, 30000);
+      });
+    }
+
+    async function compressAll(files, onProgress) {
+      var out = [];
+      for (var i = 0; i < files.length; i++) {
+        if (onProgress) onProgress(i, files.length);
+        var c = await compressImage(files[i]);
+        out.push(c);
+      }
+      if (onProgress) onProgress(files.length, files.length);
+      return out;
+    }
 
     function renderPreviews() {
       preview.innerHTML = '';
@@ -196,11 +261,11 @@
       }
     });
 
-    function setButtonLoading(loading) {
+    function setButtonLoading(loading, text) {
       submitBtn.disabled = loading;
       btnSpinner.hidden = !loading;
       if (loading) {
-        btnLabel.textContent = i18n.uploading;
+        btnLabel.textContent = text || i18n.uploading;
       } else {
         btnLabel.textContent = btnLabelOriginal;
       }
@@ -222,7 +287,7 @@
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    form.addEventListener('submit', function (e) {
+    form.addEventListener('submit', async function (e) {
       e.preventDefault();
 
       if (accumulated.length === 0) {
@@ -238,13 +303,29 @@
         }
       }
 
-      // Construim FormData manual ca sa fim siguri ca toate fisierele acumulate sunt trimise
+      // PAS 1: comprimam toate imaginile inainte de upload (client-side).
+      setButtonLoading(true, i18n.compressing);
+      var compressed;
+      try {
+        compressed = await compressAll(accumulated, function (done, total) {
+          btnLabel.textContent = i18n.compressing + ' ' + done + '/' + total;
+        });
+      } catch (err) {
+        setButtonLoading(false);
+        showError(i18n.errorGeneric + ' (compress: ' + err.message + ')');
+        return;
+      }
+
+      // PAS 2: construim FormData cu fisierele comprimate.
       var fd = new FormData();
-      accumulated.forEach(function (f) { fd.append('photos', f, f.name); });
+      compressed.forEach(function (f) { fd.append('photos', f, f.name); });
       var guest = document.getElementById('guestName');
       if (guest && guest.value) fd.append('guestName', guest.value);
       var msg = document.getElementById('message');
       if (msg && msg.value) fd.append('message', msg.value);
+
+      // Trecem in faza "uploading" pe buton
+      btnLabel.textContent = i18n.uploading;
       var xhr = new XMLHttpRequest();
       xhr.open('POST', '/upload', true);
       xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');

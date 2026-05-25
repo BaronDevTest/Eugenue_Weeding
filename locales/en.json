@@ -23,6 +23,7 @@
   "upload.messagePlaceholder": "Congratulations!",
   "upload.optional": "(optional)",
   "upload.submit": "Send photos",
+  "upload.compressing": "Preparing photos...",
   "upload.uploading": "Uploading...",
   "upload.progress": "{{percent}}%",
   "upload.errorNoFiles": "You haven't selected any photo.",
