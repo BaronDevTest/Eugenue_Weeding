@@ -1,5 +1,7 @@
+<% if (currentPath && currentPath !== '/') { %>
 <footer class="site-footer">
   <p><%= t('footer.signature', { bride: settings.brideName, groom: settings.groomName }) %></p>
 </footer>
+<% } %>
 </body>
 </html>
