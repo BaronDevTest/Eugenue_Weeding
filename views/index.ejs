@@ -4,10 +4,25 @@
 <main class="hero">
   <div class="hero-inner">
     <p class="kicker"><%= t('index.kicker') %></p>
-    <h1 class="hero-title"><%= settings.brideName %> <span class="amp">&</span> <%= settings.groomName %></h1>
+
+    <h1 class="hero-title">
+      <span class="hero-name"><%= settings.groomName %></span>
+      <span class="hero-amp">&amp;</span>
+      <span class="hero-name"><%= settings.brideName %></span>
+    </h1>
+
+    <div class="hero-divider" aria-hidden="true">
+      <span class="hero-divider-line"></span>
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 21s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.5-7 10-7 10z"/>
+      </svg>
+      <span class="hero-divider-line"></span>
+    </div>
+
     <% if (settings.weddingDate) { %>
-      <p class="hero-date"><%= settings.weddingDate %></p>
+      <p class="hero-date"><%= settings.weddingDate.replace(/[.\-\/]/g, ' · ') %></p>
     <% } %>
+
     <%
       var localizedMessage = settings['welcomeMessage' + locale.charAt(0).toUpperCase() + locale.slice(1)]
                           || settings.welcomeMessage
@@ -16,14 +31,20 @@
     <p class="hero-text"><%= localizedMessage %></p>
 
     <div class="hero-actions">
-      <a href="/upload" class="btn btn-primary">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <a href="/upload" class="btn btn-primary btn-hero">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/>
           <circle cx="12" cy="13" r="4"/>
         </svg>
         <%= t('index.btnUpload') %>
       </a>
-      <a href="/gallery" class="btn btn-ghost"><%= t('index.btnGallery') %></a>
+      <a href="/gallery" class="hero-link">
+        <%= t('index.btnGallery') %>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <line x1="5" y1="12" x2="19" y2="12"/>
+          <polyline points="12 5 19 12 12 19"/>
+        </svg>
+      </a>
     </div>
   </div>
 </main>

@@ -3,7 +3,7 @@
   "nav.gallery": "Gallery",
   "nav.back": "Back",
   "nav.home": "Home",
-  "footer.signature": "With love, {{bride}} & {{groom}}",
+  "footer.signature": "With love, {{groom}} & {{bride}}",
 
   "index.kicker": "Welcome",
   "index.welcomeMessage": "Welcome to our wedding! Please upload the photos you take so we can keep them as memories.",

@@ -26,7 +26,7 @@ const upload = multer({
 
 // Landing page
 router.get('/', async (req, res) => {
-  res.render('index', { title: 'Bun venit' });
+  res.render('index', { title: 'Bun venit', preloadBgImage: '/static/images/main_image.jpg' });
 });
 
 // Pagina de upload

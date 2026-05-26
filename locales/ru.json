@@ -3,7 +3,7 @@
   "nav.gallery": "Галерея",
   "nav.back": "Назад",
   "nav.home": "Главная",
-  "footer.signature": "С любовью, {{bride}} & {{groom}}",
+  "footer.signature": "С любовью, {{groom}} & {{bride}}",
 
   "index.kicker": "Добро пожаловать",
   "index.welcomeMessage": "Добро пожаловать на нашу свадьбу! Пожалуйста, загружайте сделанные фотографии, чтобы сохранить их на память.",
