@@ -161,6 +161,71 @@ a { color: var(--accent-dark); }
 
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* ---------- Hero loader (full-screen pana se incarca imaginea) ---------- */
+.hero-loader {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  opacity: 1;
+  transition: opacity 0.6s ease;
+}
+.hero-loader.is-fade-out { opacity: 0; pointer-events: none; }
+.hero-loader.is-gone { display: none; }
+
+.hero-loader-inner {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 22px;
+}
+
+.hero-loader-monogram {
+  font-family: var(--serif);
+  color: var(--accent-dark);
+  font-size: clamp(3rem, 14vw, 5rem);
+  font-weight: 400;
+  letter-spacing: 0.5px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  animation: monoFade 1.4s ease-in-out infinite alternate;
+}
+.hero-loader-amp {
+  font-style: italic;
+  color: var(--accent);
+  font-size: 0.7em;
+  opacity: 0.9;
+}
+@keyframes monoFade {
+  from { opacity: 0.55; }
+  to   { opacity: 1; }
+}
+
+.hero-loader-spinner {
+  width: 36px;
+  height: 36px;
+  border: 2.5px solid var(--accent-soft);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+
+.hero-loader-text {
+  font-family: var(--serif);
+  font-style: italic;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  margin: 0;
+  letter-spacing: 0.5px;
+}
+
 /* ---------- Hero ---------- */
 .hero {
   flex: 1;

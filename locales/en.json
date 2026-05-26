@@ -5,6 +5,7 @@
   "nav.home": "Home",
   "footer.signature": "With love, {{groom}} & {{bride}}",
 
+  "index.loading": "Preparing the invitation...",
   "index.kicker": "Welcome",
   "index.welcomeMessage": "Welcome to our wedding! Please upload the photos you take so we can keep them as memories.",
   "index.btnUpload": "Add a photo",

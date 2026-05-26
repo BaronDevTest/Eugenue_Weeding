@@ -1,6 +1,20 @@
 <%- include('partials/head') %>
 <%- include('partials/header') %>
 
+<!-- Loader full-screen pana cand imaginea hero e gata.
+     Folosim 'is-ready' pe body cand imaginea s-a incarcat (sau dupa timeout). -->
+<div class="hero-loader" id="heroLoader" aria-hidden="true">
+  <div class="hero-loader-inner">
+    <div class="hero-loader-monogram">
+      <span><%= settings.groomName.charAt(0) %></span>
+      <span class="hero-loader-amp">&amp;</span>
+      <span><%= settings.brideName.charAt(0) %></span>
+    </div>
+    <div class="hero-loader-spinner" aria-hidden="true"></div>
+    <p class="hero-loader-text"><%= t('index.loading') %></p>
+  </div>
+</div>
+
 <main class="hero">
   <div class="hero-inner">
     <p class="kicker"><%= t('index.kicker') %></p>
@@ -48,5 +62,34 @@
     </div>
   </div>
 </main>
+
+<script>
+  (function () {
+    // Preload imaginea principala. Cand e gata, scoatem loader-ul cu fade.
+    var heroImg = '/static/images/main_image.jpg';
+    var loader = document.getElementById('heroLoader');
+    if (!loader) return;
+
+    function dismissLoader() {
+      if (loader.classList.contains('is-gone')) return;
+      loader.classList.add('is-fade-out');
+      // dupa animatie, scoatem din DOM (sau cel putin display: none)
+      setTimeout(function () {
+        loader.classList.add('is-gone');
+      }, 600);
+    }
+
+    var img = new Image();
+    img.onload = dismissLoader;
+    img.onerror = dismissLoader; // chiar daca esueaza, nu blocam pagina
+    img.src = heroImg;
+
+    // Fallback safety: dupa 10s scoatem oricum loader-ul, ca sa nu blocheze nimic
+    setTimeout(dismissLoader, 10000);
+
+    // Daca DOMContentLoaded a fost deja (cache instant), imaginea poate fi deja in cache
+    if (img.complete) dismissLoader();
+  })();
+</script>
 
 <%- include('partials/footer') %>
