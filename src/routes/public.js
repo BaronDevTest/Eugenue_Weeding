@@ -19,10 +19,12 @@ const upload = multer({
     files: 50,
   },
   fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith('image/') || file.mimetype.startsWith('video/')) {
+    // Acceptam doar imagini. Video-urile sunt prea mari pentru fluxul nostru
+    // si lasam invitatii sa le impartaseasca pe alt canal (ex: WhatsApp).
+    if (file.mimetype.startsWith('image/')) {
       return cb(null, true);
     }
-    cb(new Error('Doar imagini si video-uri sunt acceptate.'));
+    cb(new Error('Doar imagini sunt acceptate.'));
   },
 });
 

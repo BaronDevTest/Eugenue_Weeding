@@ -27,7 +27,6 @@
   "upload.compressing": "Preparing photos...",
   "upload.uploading": "Uploading...",
   "upload.infoUploading": "Please wait — the upload may take a few moments. Don't close the page.",
-  "upload.infoUploadingVideo": "Uploading videos may take a while — it depends on file size and your connection. Don't close the page until you see the confirmation.",
   "upload.progress": "{{percent}}%",
   "upload.errorNoFiles": "You haven't selected any photo.",
   "upload.errorTooLarge": "File \"{{name}}\" exceeds the {{max}}MB limit.",

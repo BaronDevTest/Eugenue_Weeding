@@ -11,7 +11,7 @@
 
   <form action="/upload" method="POST" enctype="multipart/form-data" class="upload-form" id="uploadForm">
     <label class="dropzone" id="dropzone">
-      <input type="file" name="photos" id="fileInput" accept="image/*,video/*" multiple />
+      <input type="file" name="photos" id="fileInput" accept="image/*" multiple />
       <div class="dropzone-content" id="dropzoneContent">
         <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
@@ -127,7 +127,6 @@
       noFiles: <%- JSON.stringify(t('upload.errorNoFiles')) %>,
       removeFile: <%- JSON.stringify(t('upload.removeFile')) %>,
       infoUploading: <%- JSON.stringify(t('upload.infoUploading')) %>,
-      infoUploadingVideo: <%- JSON.stringify(t('upload.infoUploadingVideo')) %>,
       maxMb: <%= settings.maxUploadMb %>
     };
 
@@ -212,17 +211,10 @@
         var item = document.createElement('div');
         item.className = 'preview-item';
 
-        if (file.type.indexOf('image/') === 0) {
-          var img = document.createElement('img');
-          img.src = URL.createObjectURL(file);
-          img.onload = function () { URL.revokeObjectURL(img.src); };
-          item.appendChild(img);
-        } else {
-          var v = document.createElement('div');
-          v.className = 'preview-video';
-          v.textContent = 'Video';
-          item.appendChild(v);
-        }
+        var img = document.createElement('img');
+        img.src = URL.createObjectURL(file);
+        img.onload = function () { URL.revokeObjectURL(img.src); };
+        item.appendChild(img);
 
         // Buton X pentru a elimina fisierul
         var rmBtn = document.createElement('button');
@@ -343,10 +335,8 @@
       if (msg && msg.value) fd.append('message', msg.value);
 
       // Trecem in faza "uploading" pe buton + afisam mesajul informativ.
-      // Daca utilizatorul are video in selectie, folosim mesajul mai detaliat.
       btnLabel.textContent = i18n.uploading;
-      var hasVideo = compressed.some(function (f) { return f.type && f.type.indexOf('video/') === 0; });
-      showUploadInfo(hasVideo ? i18n.infoUploadingVideo : i18n.infoUploading);
+      showUploadInfo(i18n.infoUploading);
       var xhr = new XMLHttpRequest();
       xhr.open('POST', '/upload', true);
       xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
