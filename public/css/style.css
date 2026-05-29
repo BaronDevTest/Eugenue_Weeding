@@ -615,24 +615,30 @@ a { color: var(--accent-dark); }
   flex-shrink: 0;
 }
 
-/* ---------- Bara fina de progres sub buton (vizibila la upload) ---------- */
-.upload-progress-bar {
-  height: 4px;
+/* ---------- Mesaj informativ in timpul upload-ului ---------- */
+.upload-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 16px;
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
   background: var(--bg-muted);
-  border-radius: 4px;
-  margin-top: 14px;
-  overflow: hidden;
-  opacity: 0;
-  transition: opacity 0.25s ease;
-  pointer-events: none;
+  border: 1px solid var(--accent-soft);
+  color: var(--accent-dark);
+  font-size: 0.88rem;
+  font-style: italic;
+  line-height: 1.5;
+  animation: uploadInfoIn 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
-.upload-progress-bar.is-active { opacity: 1; }
-.upload-progress-fill {
-  height: 100%;
-  width: 0%;
-  background: linear-gradient(90deg, var(--accent), var(--accent-dark));
-  border-radius: 4px;
-  transition: width 0.2s ease;
+.upload-info svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--accent);
+}
+@keyframes uploadInfoIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 /* ---------- Gallery ---------- */

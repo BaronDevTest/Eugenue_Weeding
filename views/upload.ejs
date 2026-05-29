@@ -48,10 +48,14 @@
       <span class="btn-label"><%= t('upload.submit') %></span>
     </button>
 
-    <!-- Bara fina de progres in partea de jos a formularului. Vizibila doar in timpul upload-ului.
-         Utila in special pentru video care dureaza zeci de secunde. -->
-    <div class="upload-progress-bar" id="uploadProgressBar" aria-hidden="true">
-      <div class="upload-progress-fill" id="uploadProgressFill"></div>
+    <!-- Mesaj informativ in timpul upload-ului. Text adaptat dupa tipul de fisiere. -->
+    <div class="upload-info" id="uploadInfo" hidden aria-live="polite">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8" x2="12" y2="12"/>
+        <line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      <span id="uploadInfoText"></span>
     </div>
   </form>
 </main>
@@ -122,6 +126,8 @@
       tooLarge: <%- JSON.stringify(t('upload.errorTooLarge')) %>,
       noFiles: <%- JSON.stringify(t('upload.errorNoFiles')) %>,
       removeFile: <%- JSON.stringify(t('upload.removeFile')) %>,
+      infoUploading: <%- JSON.stringify(t('upload.infoUploading')) %>,
+      infoUploadingVideo: <%- JSON.stringify(t('upload.infoUploadingVideo')) %>,
       maxMb: <%= settings.maxUploadMb %>
     };
 
@@ -276,22 +282,17 @@
         btnLabel.textContent = btnLabelOriginal;
       }
     }
-    var progressBar = document.getElementById('uploadProgressBar');
-    var progressFill = document.getElementById('uploadProgressFill');
+    var uploadInfo = document.getElementById('uploadInfo');
+    var uploadInfoText = document.getElementById('uploadInfoText');
 
-    function showProgressBar() {
-      if (progressBar) progressBar.classList.add('is-active');
+    function showUploadInfo(text) {
+      if (uploadInfoText) uploadInfoText.textContent = text;
+      if (uploadInfo) uploadInfo.hidden = false;
     }
-    function hideProgressBar() {
-      if (progressBar) {
-        progressBar.classList.remove('is-active');
-        if (progressFill) progressFill.style.width = '0%';
-      }
+    function hideUploadInfo() {
+      if (uploadInfo) uploadInfo.hidden = true;
     }
-    function setPercent(p) {
-      var v = Math.max(0, Math.min(100, Math.round(p)));
-      if (progressFill) progressFill.style.width = v + '%';
-    }
+    function setPercent(/* unused - we don't show percentage */) {}
 
     function showError(msg) {
       var existing = document.getElementById('serverError');
@@ -341,10 +342,11 @@
       var msg = document.getElementById('message');
       if (msg && msg.value) fd.append('message', msg.value);
 
-      // Trecem in faza "uploading" pe buton + aratam bara de progres
+      // Trecem in faza "uploading" pe buton + afisam mesajul informativ.
+      // Daca utilizatorul are video in selectie, folosim mesajul mai detaliat.
       btnLabel.textContent = i18n.uploading;
-      showProgressBar();
-      setPercent(0);
+      var hasVideo = compressed.some(function (f) { return f.type && f.type.indexOf('video/') === 0; });
+      showUploadInfo(hasVideo ? i18n.infoUploadingVideo : i18n.infoUploading);
       var xhr = new XMLHttpRequest();
       xhr.open('POST', '/upload', true);
       xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
@@ -360,18 +362,17 @@
         try { data = JSON.parse(xhr.responseText); } catch (e) {}
 
         if (xhr.status >= 200 && xhr.status < 300 && data && data.ok) {
-          setPercent(100);
           window.location.href = data.redirectTo || '/gallery';
         } else {
           setButtonLoading(false);
-          hideProgressBar();
+          hideUploadInfo();
           var msg = (data && data.error) ? data.error : (i18n.errorGeneric + ' (HTTP ' + xhr.status + ')');
           showError(msg);
         }
       };
       xhr.onerror = function () {
         setButtonLoading(false);
-        hideProgressBar();
+        hideUploadInfo();
         showError(i18n.errorGeneric);
       };
 

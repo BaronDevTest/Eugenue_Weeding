@@ -26,6 +26,8 @@
   "upload.submit": "Trimite pozele",
   "upload.compressing": "Se pregătesc pozele...",
   "upload.uploading": "Se incarca...",
+  "upload.infoUploading": "Te rugăm să astepti — incarcarea poate dura cateva momente. Nu inchide pagina.",
+  "upload.infoUploadingVideo": "Incarcarea videoclipurilor poate dura mai mult — depinde de marime si de conexiunea ta. Nu inchide pagina pana cand nu apare confirmarea.",
   "upload.progress": "{{percent}}%",
   "upload.errorNoFiles": "Nu ai selectat nicio poza.",
   "upload.errorTooLarge": "Fisierul \"{{name}}\" depaseste limita de {{max}}MB.",
