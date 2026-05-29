@@ -16,3 +16,9 @@ load-cleanup.js
 production-gallery.html
 diagnose.js
 diagnose-output.txt
+
+# Backup-uri locale ale imaginilor inainte de optimizare
+*_original.jpg
+*_original.png
+*_original.jpeg
+load-test-payload.jpg
