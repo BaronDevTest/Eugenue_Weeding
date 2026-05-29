@@ -294,7 +294,7 @@ router.post('/settings', async (req, res, next) => {
       welcomeMessageRu: (welcomeMessageRu || '').trim().slice(0, 500),
       welcomeMessage: (welcomeMessageRo || '').trim().slice(0, 500), // legacy compat
       driveFolderId: (driveFolderId || '').trim(),
-      maxUploadMb: Math.max(1, Math.min(100, parseInt(maxUploadMb, 10) || 25)),
+      maxUploadMb: Math.max(1, Math.min(500, parseInt(maxUploadMb, 10) || 25)),
       allowMessages: allowMessages === 'on' || allowMessages === 'true' || allowMessages === true,
     };
 

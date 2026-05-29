@@ -20,7 +20,7 @@ const DEFAULTS = {
   driveRefreshToken: '',
   driveConnectedAs: '',
   adminPasswordHash: '',
-  maxUploadMb: 100,
+  maxUploadMb: 500,
   allowMessages: true,
 };
 

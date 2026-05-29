@@ -615,6 +615,26 @@ a { color: var(--accent-dark); }
   flex-shrink: 0;
 }
 
+/* ---------- Bara fina de progres sub buton (vizibila la upload) ---------- */
+.upload-progress-bar {
+  height: 4px;
+  background: var(--bg-muted);
+  border-radius: 4px;
+  margin-top: 14px;
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  pointer-events: none;
+}
+.upload-progress-bar.is-active { opacity: 1; }
+.upload-progress-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--accent), var(--accent-dark));
+  border-radius: 4px;
+  transition: width 0.2s ease;
+}
+
 /* ---------- Gallery ---------- */
 .gallery-toolbar {
   display: flex;

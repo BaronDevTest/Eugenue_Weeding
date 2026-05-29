@@ -47,6 +47,12 @@
       <span class="btn-spinner" aria-hidden="true" hidden></span>
       <span class="btn-label"><%= t('upload.submit') %></span>
     </button>
+
+    <!-- Bara fina de progres in partea de jos a formularului. Vizibila doar in timpul upload-ului.
+         Utila in special pentru video care dureaza zeci de secunde. -->
+    <div class="upload-progress-bar" id="uploadProgressBar" aria-hidden="true">
+      <div class="upload-progress-fill" id="uploadProgressFill"></div>
+    </div>
   </form>
 </main>
 
@@ -270,10 +276,21 @@
         btnLabel.textContent = btnLabelOriginal;
       }
     }
+    var progressBar = document.getElementById('uploadProgressBar');
+    var progressFill = document.getElementById('uploadProgressFill');
+
+    function showProgressBar() {
+      if (progressBar) progressBar.classList.add('is-active');
+    }
+    function hideProgressBar() {
+      if (progressBar) {
+        progressBar.classList.remove('is-active');
+        if (progressFill) progressFill.style.width = '0%';
+      }
+    }
     function setPercent(p) {
-      // procentajul nu mai e afisat - butonul ramane in stare "loading"
-      // pana la redirect. Functia o pastram doar ca placeholder pentru
-      // viitoare ajustari (ex: bara fina de progres).
+      var v = Math.max(0, Math.min(100, Math.round(p)));
+      if (progressFill) progressFill.style.width = v + '%';
     }
 
     function showError(msg) {
@@ -324,8 +341,10 @@
       var msg = document.getElementById('message');
       if (msg && msg.value) fd.append('message', msg.value);
 
-      // Trecem in faza "uploading" pe buton
+      // Trecem in faza "uploading" pe buton + aratam bara de progres
       btnLabel.textContent = i18n.uploading;
+      showProgressBar();
+      setPercent(0);
       var xhr = new XMLHttpRequest();
       xhr.open('POST', '/upload', true);
       xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
@@ -345,12 +364,14 @@
           window.location.href = data.redirectTo || '/gallery';
         } else {
           setButtonLoading(false);
+          hideProgressBar();
           var msg = (data && data.error) ? data.error : (i18n.errorGeneric + ' (HTTP ' + xhr.status + ')');
           showError(msg);
         }
       };
       xhr.onerror = function () {
         setButtonLoading(false);
+        hideProgressBar();
         showError(i18n.errorGeneric);
       };
 

@@ -13,7 +13,9 @@ const router = express.Router();
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
-    fileSize: 110 * 1024 * 1024, // 110MB hard cap; cap real vine din settings.maxUploadMb
+    // 600MB hard cap - suficient pentru videoclipuri de pe telefon (1-3 minute).
+    // Cap-ul real vine din settings.maxUploadMb (configurabil 1-500MB din admin).
+    fileSize: 600 * 1024 * 1024,
     files: 50,
   },
   fileFilter: (req, file, cb) => {

@@ -69,7 +69,8 @@
       </div>
       <div class="form-row">
         <label for="maxUploadMb">Limita marime fisier (MB)</label>
-        <input type="number" id="maxUploadMb" name="maxUploadMb" value="<%= settings.maxUploadMb %>" min="1" max="100" />
+        <input type="number" id="maxUploadMb" name="maxUploadMb" value="<%= settings.maxUploadMb %>" min="1" max="500" />
+        <small>Maxim 500 MB. Pentru video-uri de la telefon, recomand 200-500 MB.</small>
       </div>
     </fieldset>
 
